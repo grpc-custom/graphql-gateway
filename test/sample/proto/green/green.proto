@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package green;
+
+import "google/protobuf/timestamp.proto";
+import "github.com/grpc-custom/graphql-gateway/graphql.proto";
+
+message Term {
+  int64 start_at = 1;
+  int64 end_at   = 2;
+}
+
+message Green {
+  string                    id         = 1;
+  string                    title      = 2;
+  string                    text       = 3;
+  string                    url        = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+  Term                      term       = 7;
+  bool                      published  = 8;
+}
+
+message ListRequest {
+  string next_token = 1;
+  int32  size       = 2;
+}
+
+message ListResponse {
+  string   next_token   = 1;
+  repeated Green greens = 2;
+}
+
+message GetRequest {
+  string id = 1;
+}
+
+message GetResponse {
+  Green green = 1;
+}
+
+service GreenService {
+  rpc List(ListRequest) returns (ListResponse) {
+    option (graphql.schema) = {
+      query: "listGreen"
+    };
+  }
+
+  rpc Get(GetRequest) returns (GetResponse) {
+    option (graphql.schema) = {
+      query: "getGreen"
+    };
+  }
+}

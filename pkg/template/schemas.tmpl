@@ -1,0 +1,14 @@
+var (
+{{ range $msg := .Messages }}
+    {{ $msg.GetSchemaTypeName }} = graphql.NewObject(graphql.ObjectConfig{
+        Name: "{{ $msg.FieldName }}",
+        Fields: graphql.Fields{
+        {{ range $field := $msg.Fields -}}
+            "{{ $field.GetJsonName }}": &graphql.Field{
+                Type: {{ $field.ScalarType }},
+            },
+        {{ end }}
+        },
+    })
+{{ end }}
+)

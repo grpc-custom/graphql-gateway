@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package red;
+
+import "github.com/grpc-custom/graphql-gateway/graphql.proto";
+
+message Red {
+  int32  id         = 1;
+  string name       = 2;
+  int64  created_at = 3;
+  int64  updated_at = 4;
+  bool   enabled    = 5;
+  double point      = 6;
+}
+
+message GetRequest {
+  int32 id = 1;
+}
+
+message GetResponse {
+  Red red = 1;
+}
+
+enum Size {
+  SMALL  = 0;
+  MIDDLE = 1;
+  LARGE  = 2;
+}
+
+message ListRequest {
+  int32 offset = 1;
+  int32 limit  = 2;
+  Size  size   = 3;
+  enum Type {
+    UNKNOWN = 0;
+    ENABLED = 1;
+  }
+  repeated Type filters = 4;
+}
+
+message ListResponse {
+  repeated Red reds  = 1;
+  int32        total = 2;
+  int32        limit = 3;
+  int32        size  = 4;
+}
+
+message CreateRequest {
+  int32  id   = 1;
+  string name = 2;
+}
+
+message CreateResponse {
+  Red red = 1;
+}
+
+message UpdateRequest {
+  int32  id   = 1;
+  string name = 2;
+}
+
+message UpdateResponse {
+  Red red = 1;
+}
+
+message DeleteRequest {
+  int32 id = 1;
+}
+
+message DeleteResponse {
+  int32 id = 1;
+}
+
+service RedService {
+  rpc Get(GetRequest) returns (GetResponse) {
+    option (graphql.schema) = {
+      query: "getRed"
+      description: "gets a red"
+    };
+  }
+
+  rpc List(ListRequest) returns (ListResponse) {
+    option (graphql.schema) = {
+      query: "listReds"
+      description: "list red"
+    };
+  }
+
+  rpc Create(CreateRequest) returns (CreateResponse) {
+    option (graphql.schema) = {
+      mutation: "createRed"
+      description: "creates new red"
+    };
+  }
+
+  rpc Update(UpdateRequest) returns (UpdateResponse) {
+    option (graphql.schema) = {
+      mutation: "updateRed"
+      description: "updates a red"
+    };
+  }
+
+  rpc Delete(DeleteRequest) returns (DeleteResponse) {
+    option (graphql.schema) = {
+      mutation: "deleteRed"
+      description: "deletes a red"
+    };
+  }
+}

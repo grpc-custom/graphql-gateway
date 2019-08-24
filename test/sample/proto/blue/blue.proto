@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package blue;
+
+option go_package = ";bluev1";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+import "github.com/grpc-custom/graphql-gateway/graphql.proto";
+
+message Blue {
+  string id                          = 1;
+  google.protobuf.DoubleValue double = 2;
+  google.protobuf.FloatValue float   = 3;
+  google.protobuf.Int64Value  int64  = 4;
+  google.protobuf.UInt64Value uint64 = 5;
+  google.protobuf.Int32Value  int32  = 6;
+  google.protobuf.UInt32Value uint32 = 7;
+  google.protobuf.BoolValue bool     = 8;
+  google.protobuf.StringValue string = 9;
+}
+
+message GetRequest {
+  string id = 1;
+}
+
+message GetResponse {
+  Blue blue = 1;
+}
+
+message CreateRequest {
+  google.protobuf.DoubleValue double = 1;
+  google.protobuf.FloatValue float   = 2;
+  google.protobuf.Int64Value  int64  = 3;
+  google.protobuf.UInt64Value uint64 = 4;
+  google.protobuf.Int32Value  int32  = 5;
+  google.protobuf.UInt32Value uint32 = 6;
+  google.protobuf.BoolValue bool     = 7;
+  google.protobuf.StringValue string = 8;
+}
+
+service BlueService {
+  rpc Get(GetRequest) returns (GetResponse) {
+    option (graphql.schema) = {
+      query: "getBlue"
+    };
+  }
+  rpc Create(CreateRequest) returns (google.protobuf.Empty) {
+    option (graphql.schema) = {
+      mutation: "createBlue"
+    };
+  }
+}

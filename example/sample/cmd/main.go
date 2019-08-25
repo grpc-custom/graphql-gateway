@@ -6,8 +6,9 @@ import (
 	"log"
 	"net"
 
-	"github.com/grpc-custom/graphql-gateway/test/sample/proto/red"
-	"github.com/grpc-custom/graphql-gateway/test/sample/service"
+	"github.com/grpc-custom/graphql-gateway/example/sample/proto/green"
+	"github.com/grpc-custom/graphql-gateway/example/sample/proto/red"
+	"github.com/grpc-custom/graphql-gateway/example/sample/service"
 	"google.golang.org/grpc"
 )
 
@@ -27,6 +28,8 @@ func main() {
 	switch *svc {
 	case "red":
 		registerRedServer(server)
+	case "green":
+		registerGreenServer(server)
 	default:
 		panic("unimplemented gRPC server")
 	}
@@ -39,4 +42,9 @@ func main() {
 func registerRedServer(server *grpc.Server) {
 	svc := service.NewReadService()
 	red.RegisterRedServiceServer(server, svc)
+}
+
+func registerGreenServer(server *grpc.Server) {
+	svc := service.NewGreenService()
+	green.RegisterGreenServiceServer(server, svc)
 }

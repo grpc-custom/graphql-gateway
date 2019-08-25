@@ -2,11 +2,11 @@
 package template
 
 import (
-    "text/template"
+	"text/template"
 )
 
 var handlerTemplate = template.Must(template.New("handler").
-Parse(`
+	Parse(`
 {{ range $svc := .Services }}
 func Register{{ $svc.GetName }}FromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
     conn, err := grpc.DialContext(ctx, endpoint, opts...)
@@ -54,7 +54,11 @@ func Register{{ $svc.GetName }}HandlerClient(mux *runtime.ServeMux, client {{ $s
                 {{ range $field := $method.Request.Fields -}}
                     {{ $field.Variable }}, ok := p.Args["{{ $field.GetJsonName }}"].({{ $field.GoType }})
                     if !ok {
+                    {{ if $field.IsNullable -}}
+                        {{ $field.Variable }} = {{ $field.GoDefaultValue }}
+                    {{ else -}}
                         return nil, runtime.ErrInvalidArguments
+                    {{ end -}}
                     }
                     in.{{ $field.FieldName }} = {{ $field.Variable }}
                 {{ end -}}

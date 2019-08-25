@@ -14,7 +14,7 @@ message Red {
 }
 
 message GetRequest {
-  int32 id = 1;
+  int32 id = 1 [(grpc_custom.graphql.field) = { nullable: false }];
 }
 
 message GetResponse {
@@ -73,35 +73,35 @@ message DeleteResponse {
 
 service RedService {
   rpc Get(GetRequest) returns (GetResponse) {
-    option (graphql.schema) = {
+    option (grpc_custom.graphql.schema) = {
       query: "getRed"
       description: "gets a red"
     };
   }
 
   rpc List(ListRequest) returns (ListResponse) {
-    option (graphql.schema) = {
+    option (grpc_custom.graphql.schema) = {
       query: "listReds"
       description: "list red"
     };
   }
 
   rpc Create(CreateRequest) returns (CreateResponse) {
-    option (graphql.schema) = {
+    option (grpc_custom.graphql.schema) = {
       mutation: "createRed"
       description: "creates new red"
     };
   }
 
   rpc Update(UpdateRequest) returns (UpdateResponse) {
-    option (graphql.schema) = {
+    option (grpc_custom.graphql.schema) = {
       mutation: "updateRed"
       description: "updates a red"
     };
   }
 
   rpc Delete(DeleteRequest) returns (DeleteResponse) {
-    option (graphql.schema) = {
+    option (grpc_custom.graphql.schema) = {
       mutation: "deleteRed"
       description: "deletes a red"
     };

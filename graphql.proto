@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package graphql;
+package grpc_custom.graphql;
 
 option go_package = "github.com/grpc-custom/graphql-gateway/proto;graphql";
 
@@ -28,28 +28,15 @@ message Schema {
 }
 
 message Field {
-  Scalar scalar      = 1;
-  bool   nullable    = 2;
-  string description = 3;
+  bool   nullable    = 1;
+  string description = 2;
+  oneof default {
+    string default_string = 3;
+    int64  default_number = 4;
+  }
 }
 
 message Object {
   string name        = 1;
   string description = 2;
-}
-
-enum Scalar {
-  UNKNOWN = 0;
-  // ProtocolBuffers scalar value types
-  BOOL   = 1;
-  STRING = 2;
-  INT32  = 3;
-  UINT32 = 4;
-  INT64  = 5;
-  UINT64 = 6;
-  FLOAT  = 7;
-  DOUBLE = 8;
-  BYTES  = 9;
-  //
-  DATETIME = 10;
 }

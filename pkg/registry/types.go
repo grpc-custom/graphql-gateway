@@ -140,6 +140,10 @@ func (f *Field) isRepeated() bool {
 	return f.GetLabel() == descriptor.FieldDescriptorProto_LABEL_REPEATED
 }
 
+func (f *Field) IsNullable() bool {
+	return f.Nullable == nil || *f.Nullable
+}
+
 func (f *Field) FieldName() string {
 	name := generator.CamelCase(f.GetName())
 	if isGoProtoMethod[name] {
@@ -223,6 +227,42 @@ func (f *Field) GoType() string {
 		return "[]" + typ
 	}
 	return typ
+}
+
+func (f *Field) GoDefaultValue() string {
+	if f.isRepeated() {
+		return "nil"
+	}
+
+	switch f.GetType() {
+	case
+		descriptor.FieldDescriptorProto_TYPE_DOUBLE,
+		descriptor.FieldDescriptorProto_TYPE_FLOAT,
+		descriptor.FieldDescriptorProto_TYPE_INT64,
+		descriptor.FieldDescriptorProto_TYPE_SINT64,
+		descriptor.FieldDescriptorProto_TYPE_SFIXED64,
+		descriptor.FieldDescriptorProto_TYPE_UINT64,
+		descriptor.FieldDescriptorProto_TYPE_FIXED64,
+		descriptor.FieldDescriptorProto_TYPE_INT32,
+		descriptor.FieldDescriptorProto_TYPE_SINT32,
+		descriptor.FieldDescriptorProto_TYPE_UINT32,
+		descriptor.FieldDescriptorProto_TYPE_FIXED32,
+		descriptor.FieldDescriptorProto_TYPE_SFIXED32:
+		return "0"
+	case descriptor.FieldDescriptorProto_TYPE_BOOL:
+		return "false"
+	case descriptor.FieldDescriptorProto_TYPE_STRING:
+		return "\"\""
+	case descriptor.FieldDescriptorProto_TYPE_GROUP:
+		// unknown fields
+	case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
+		return "nil"
+	case descriptor.FieldDescriptorProto_TYPE_BYTES:
+		return "nil"
+	case descriptor.FieldDescriptorProto_TYPE_ENUM:
+		return "0"
+	}
+	return "nil"
 }
 
 func (f *Field) ScalarType() string {

@@ -5,8 +5,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/grpc-custom/graphql-gateway/example/sample/proto/green"
+	"github.com/grpc-custom/graphql-gateway/example/sample/proto/red"
 	"github.com/grpc-custom/graphql-gateway/runtime"
-	"github.com/grpc-custom/graphql-gateway/test/sample/proto/red"
 	"google.golang.org/grpc"
 )
 
@@ -24,6 +25,11 @@ func main() {
 	}
 	redHost := "localhost:9001"
 	err = red.RegisterRedServiceFromEndpoint(ctx, mux, redHost, opts)
+	if err != nil {
+		log.Fatal(err)
+	}
+	greenHost := "localhost:9002"
+	err = green.RegisterGreenServiceFromEndpoint(ctx, mux, greenHost, opts)
 	if err != nil {
 		log.Fatal(err)
 	}

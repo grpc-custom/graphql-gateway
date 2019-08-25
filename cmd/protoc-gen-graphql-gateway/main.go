@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/golang/glog"
@@ -14,12 +15,26 @@ import (
 )
 
 var (
-	compilerType = flag.String("compiler_type", "", "")
+	compilerType       = flag.String("compiler_type", "", "")
+	registerFuncSuffix = flag.String("register_func_suffix", "", "used to construct names of generated Register*<Suffix> methods.")
+	versionFlag        = flag.Bool("version", false, "print the current version")
+)
+
+// set version by goreleaser
+var (
+	version = "dev"
+	commit  = "unknown"
+	date    = "unknown"
 )
 
 func main() {
 	flag.Parse()
 	defer glog.Flush()
+
+	if *versionFlag {
+		fmt.Printf("Version %s, commit %s, build at %s\n", version, commit, date)
+		os.Exit(0)
+	}
 
 	req, err := protoc.ParseRequest(os.Stdin)
 	if err != nil {
@@ -27,8 +42,6 @@ func main() {
 	}
 
 	protoc.ParseParameter(req.GetParameter())
-
-	glog.Info(*compilerType)
 
 	reg := registry.New()
 	if err := reg.Apply(req); err != nil {
@@ -46,6 +59,25 @@ func main() {
 		}
 
 		var imports []*registry.GoPackage
+		for _, svc := range file.Services {
+			for _, method := range svc.Methods {
+				for _, field := range method.Request.Fields {
+					if !field.IsMessageType() {
+						continue
+					}
+					dependence, err := reg.LookupMsg(file.GetPackage(), field.GetTypeName())
+					if err != nil {
+						emitError(err)
+						return
+					}
+					if file.GoPkg.String() == dependence.File.GoPkg.String() {
+						continue
+					}
+					imports = append(imports, dependence.File.GoPkg)
+				}
+			}
+		}
+
 		for _, msg := range file.Messages {
 			for _, field := range msg.Fields {
 				switch {
@@ -64,11 +96,6 @@ func main() {
 					}
 					field.Dependence = dependence
 					field.Dependence.Type = field.GetTypeName()
-
-					if file.GoPkg.String() == dependence.File.GoPkg.String() {
-						continue
-					}
-					imports = append(imports, dependence.File.GoPkg)
 				}
 			}
 		}

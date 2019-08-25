@@ -23,7 +23,7 @@ message Green {
 
 message ListRequest {
   string next_token = 1;
-  int32  size       = 2;
+  int32  size       = 2 [(grpc_custom.graphql.field) = { default_number: 100 }];
 }
 
 message ListResponse {
@@ -41,13 +41,13 @@ message GetResponse {
 
 service GreenService {
   rpc List(ListRequest) returns (ListResponse) {
-    option (graphql.schema) = {
-      query: "listGreen"
+    option (grpc_custom.graphql.schema) = {
+      query: "listGreens"
     };
   }
 
   rpc Get(GetRequest) returns (GetResponse) {
-    option (graphql.schema) = {
+    option (grpc_custom.graphql.schema) = {
       query: "getGreen"
     };
   }

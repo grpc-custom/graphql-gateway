@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/grpc-custom/graphql-gateway/test/sample/proto/red"
+	"github.com/grpc-custom/graphql-gateway/example/sample/proto/red"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

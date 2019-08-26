@@ -50,10 +50,15 @@ func GenerateSchemas(file *registry.File) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+type HandlerParams struct {
+	*registry.File
+	RegisterFuncSuffix string
+}
+
 //go:generate go run ./gen.go handler.tmpl handler
-func GenerateHandler(file *registry.File) ([]byte, error) {
+func GenerateHandler(params *HandlerParams) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	if err := handlerTemplate.Execute(buf, file); err != nil {
+	if err := handlerTemplate.Execute(buf, params); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil

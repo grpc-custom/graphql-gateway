@@ -8,7 +8,7 @@ import (
 var handlerTemplate = template.Must(template.New("handler").
 	Parse(`
 {{ range $svc := .Services }}
-func Register{{ $svc.GetName }}FromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+func Register{{ $svc.GetName }}{{ $.RegisterFuncSuffix }}FromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
     conn, err := grpc.DialContext(ctx, endpoint, opts...)
     if err != nil {
         return
@@ -27,14 +27,14 @@ func Register{{ $svc.GetName }}FromEndpoint(ctx context.Context, mux *runtime.Se
             }
         }()
     }()
-    return Register{{ $svc.GetName }}Handler(mux, conn)
+    return Register{{ $svc.GetName }}{{ $.RegisterFuncSuffix }}Handler(mux, conn)
 }
 
-func Register{{ $svc.GetName }}Handler(mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-    return Register{{ $svc.GetName }}HandlerClient(mux, New{{ $svc.GetName }}Client(conn))
+func Register{{ $svc.GetName }}{{ $.RegisterFuncSuffix }}Handler(mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+    return Register{{ $svc.GetName }}{{ $.RegisterFuncSuffix }}HandlerClient(mux, New{{ $svc.GetName }}Client(conn))
 }
 
-func Register{{ $svc.GetName }}HandlerClient(mux *runtime.ServeMux, client {{ $svc.GetName }}Client) error {
+func Register{{ $svc.GetName }}{{ $.RegisterFuncSuffix }}HandlerClient(mux *runtime.ServeMux, client {{ $svc.GetName }}Client) error {
 {{ range $method := $svc.Methods -}}
     {{ if $method.HasGraphQLMethod -}}
         // gRPC {{ $method.FullMethod }}

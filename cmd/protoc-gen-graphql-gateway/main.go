@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	compilerType       = flag.String("compiler_type", "", "")
+	compilerType       = flag.String("compiler_type", "go", "")
 	registerFuncSuffix = flag.String("register_func_suffix", "", "used to construct names of generated Register*<Suffix> methods.")
+	traceType          = flag.String("trace_type", "", "")
 	versionFlag        = flag.Bool("version", false, "print the current version")
 )
 
@@ -127,7 +128,11 @@ func generate(
 		return nil, err
 	}
 	buf.Write(schemaCode)
-	handlerCode, err := template.GenerateHandler(file)
+	params := &template.HandlerParams{
+		File:               file,
+		RegisterFuncSuffix: *registerFuncSuffix,
+	}
+	handlerCode, err := template.GenerateHandler(params)
 	if err != nil {
 		return nil, err
 	}

@@ -1,5 +1,0 @@
-package generator
-
-func New() {
-
-}

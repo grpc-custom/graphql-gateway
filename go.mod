@@ -1,6 +1,6 @@
 module github.com/grpc-custom/graphql-gateway
 
-go 1.12
+go 1.13
 
 require (
 	cloud.google.com/go v0.44.0 // indirect
@@ -15,12 +15,12 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
-	github.com/stretchr/testify v1.3.0
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 	golang.org/x/mobile v0.0.0-20190806162312-597adff16ade // indirect
-	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
-	golang.org/x/sys v0.0.0-20190804053845-51ab0e2deafa // indirect
+	golang.org/x/net v0.0.0-20191112182307-2180aed22343
+	golang.org/x/sys v0.0.0-20191115151921-52ab43148777 // indirect
 	golang.org/x/tools v0.0.0-20190809145639-6d4652c779c4 // indirect
-	google.golang.org/grpc v1.22.1
+	google.golang.org/genproto v0.0.0-20191115221424-83cc0476cb11 // indirect
+	google.golang.org/grpc v1.25.1
 	honnef.co/go/tools v0.0.1-2019.2.2 // indirect
 )

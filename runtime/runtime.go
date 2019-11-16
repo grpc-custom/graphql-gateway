@@ -170,11 +170,9 @@ func NewServeMux() (*ServeMux, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	serveMux := &ServeMux{
 		graphiQL: false,
 		schema:   &schema,
 	}
-
 	return serveMux, nil
 }

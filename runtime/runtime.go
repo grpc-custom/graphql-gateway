@@ -12,7 +12,8 @@ import (
 
 const (
 	acceptHeader              = "Accept"
-	contentTypeHeader         = "Context-Type"
+	contentTypeHeader         = "Content-Type"
+	authorizationHeader       = "Authorization"
 	applicationJSON           = "application/json"
 	applicationGraphQL        = "application/graphql"
 	applicationFormURLEncoded = "application/x-www-form-urlencoded"
@@ -45,13 +46,13 @@ func (s *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-
 	req, err := s.newGraphQLRequest(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
+	token := r.Header.Get(authorizationHeader)
+	ctx = SetAuthToken(ctx, token)
 	params := graphql.Params{
 		Context:        ctx,
 		Schema:         *s.schema,
@@ -60,7 +61,8 @@ func (s *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		OperationName:  req.OperationName,
 	}
 	ret := graphql.Do(params)
-
+	w.Header().Set(contentTypeHeader, applicationJSON)
+	w.WriteHeader(http.StatusOK)
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	json.NewEncoder(w).Encode(ret)
 }
@@ -158,6 +160,7 @@ func NewServeMux() (*ServeMux, error) {
 				},
 			},
 		}),
+		// TODO
 		Subscription: graphql.NewObject(graphql.ObjectConfig{
 			Name: "Subscription",
 			Fields: graphql.Fields{

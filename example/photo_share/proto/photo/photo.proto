@@ -71,7 +71,7 @@ service PhotoService {
       mutation: "postPhoto"
     };
   }
-  rpc TagPhoto(TagPhotoRequest) returns (PhotoResponse) {
+  rpc TagPhoto(TagPhotoRequest) returns (google.protobuf.Empty) {
     option (grpc_custom.graphql.schema) = {
       mutation: "tagPhoto"
     };

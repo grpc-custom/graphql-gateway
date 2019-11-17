@@ -11,6 +11,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-custom/graphql-gateway/example/photo_share/proto/photo"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -50,6 +51,10 @@ func NewPhotoService() photo.PhotoServiceServer {
 }
 
 func (p *PhotoService) TotalPhotos(ctx context.Context, _ *empty.Empty) (*photo.TotalPhotosResponse, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		fmt.Println(md.Get("Authorization"))
+	}
 	var total int
 	p.data.Range(func(_, _ interface{}) bool {
 		total++
@@ -105,6 +110,6 @@ func (p *PhotoService) PostPhoto(ctx context.Context, in *photo.PostPhotoRequest
 	return resp, nil
 }
 
-func (p *PhotoService) TagPhoto(ctx context.Context, in *photo.TagPhotoRequest) (*photo.PhotoResponse, error) {
-	return nil, nil
+func (p *PhotoService) TagPhoto(ctx context.Context, in *photo.TagPhotoRequest) (*empty.Empty, error) {
+	return &empty.Empty{}, nil
 }

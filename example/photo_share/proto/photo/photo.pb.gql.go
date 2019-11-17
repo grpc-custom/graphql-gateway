@@ -225,7 +225,7 @@ func RegisterPhotoServiceHandlerClient(mux *runtime.ServeMux, client PhotoServic
 	tagPhotoField := &graphql.Field{
 		Name:        "/photo.PhotoService/TagPhoto",
 		Description: "",
-		Type:        photoResponseType,
+		Type:        scalar.Empty,
 		Args: graphql.FieldConfigArgument{
 			"githubLogin": &graphql.ArgumentConfig{
 				Type: scalar.String,

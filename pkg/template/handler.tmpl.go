@@ -50,7 +50,7 @@ func Register{{ $svc.GetName }}{{ $.RegisterFuncSuffix }}HandlerClient(mux *runt
                 {{ end }}
             },
             Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                in := &{{ $method.Request.GetName }}{}
+                in := &{{ $method.Request.GetGoTypeName }}{}
                 {{ range $field := $method.Request.Fields -}}
                     {{ $field.Variable }}, ok := p.Args["{{ $field.GetJsonName }}"].({{ $field.GoType }})
                     if !ok {

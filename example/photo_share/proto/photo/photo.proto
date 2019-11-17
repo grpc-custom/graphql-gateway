@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package photo;
+
+import "github.com/grpc-custom/graphql-gateway/graphql.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+message Photo {
+  string                    id          = 1;
+  string                    name        = 2;
+  string                    url         = 3;
+  string                    description = 4;
+  PhotoCategory             category    = 5;
+  google.protobuf.Timestamp created     = 6;
+}
+
+enum PhotoCategory {
+  SELFIE    = 0;
+  PORTRAIT  = 1;
+  ACTION    = 2;
+  LANDSCAPE = 3;
+  GRAPHIC   = 4;
+}
+
+message TotalPhotosResponse {
+  int32 total = 1;
+}
+
+message AllPhotosResponse {
+  repeated Photo photos = 1;
+}
+
+message PhotoRequest {
+  string id = 1;
+}
+
+message PhotoResponse {
+  Photo photo = 1;
+}
+
+message PostPhotoRequest {
+  string        name        = 1;
+  PhotoCategory category    = 2;
+  string        description = 3;
+}
+
+message TagPhotoRequest {
+  string github_login = 1;
+  string photo_id     = 2;
+}
+
+service PhotoService {
+  rpc TotalPhotos(google.protobuf.Empty) returns (TotalPhotosResponse) {
+    option (grpc_custom.graphql.schema) = {
+      query: "totalPhotos"
+    };
+  }
+  rpc AllPhotos(google.protobuf.Empty) returns (AllPhotosResponse) {
+    option (grpc_custom.graphql.schema) = {
+      query: "allPhotos"
+    };
+  }
+  rpc Photo(PhotoRequest) returns (PhotoResponse) {
+    option (grpc_custom.graphql.schema) = {
+      query: "photo"
+    };
+  }
+  rpc PostPhoto(PostPhotoRequest) returns (PhotoResponse) {
+    option (grpc_custom.graphql.schema) = {
+      mutation: "postPhoto"
+    };
+  }
+  rpc TagPhoto(TagPhotoRequest) returns (PhotoResponse) {
+    option (grpc_custom.graphql.schema) = {
+      mutation: "tagPhoto"
+    };
+  }
+}

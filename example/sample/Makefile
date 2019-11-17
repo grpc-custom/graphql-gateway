@@ -4,4 +4,7 @@ red-server:
 green-server:
 	go run ./cmd/main.go -port=9002 -svc=green
 
+gateway-server:
+	go run ./main.go
+
 .PHONY: red-server green-server

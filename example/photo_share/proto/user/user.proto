@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+message User {
+  string github_login = 1;
+  string name         = 2;
+  string avatar       = 3;
+}

@@ -67,6 +67,15 @@ func (m *Message) MessageName() string {
 	return strings.Join(components, ".")
 }
 
+func (m *Message) GetGoTypeName() string {
+	switch m.Type {
+	case ".google.protobuf.Empty":
+		return "empty.Empty"
+	default:
+		return m.GetName()
+	}
+}
+
 type Enum struct {
 	*descriptor.EnumDescriptorProto
 	File   *File

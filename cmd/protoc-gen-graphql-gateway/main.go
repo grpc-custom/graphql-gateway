@@ -62,6 +62,14 @@ func main() {
 		var imports []*registry.GoPackage
 		for _, svc := range file.Services {
 			for _, method := range svc.Methods {
+				dep, err := reg.LookupMsg("", method.GetInputType())
+				if err != nil {
+					emitError(err)
+					return
+				}
+				if dep != nil && file.GoPkg != dep.File.GoPkg {
+					imports = append(imports, dep.File.GoPkg)
+				}
 				for _, field := range method.Request.Fields {
 					if !field.IsMessageType() {
 						continue

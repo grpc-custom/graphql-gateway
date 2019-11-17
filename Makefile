@@ -18,7 +18,7 @@ graphql-gateway-debug: build-graphql-gateway-debug
        	--graphql-gateway-debug_out=logtostderr=true:. \
         test/basic/user.proto
 
-protoc-test-gql: build-graphql-gateway-debug
+gen-example-sample: build-graphql-gateway-debug
 	protoc \
 		-I=${GOPATH}/src:. \
 		-I=${GOPATH}/src/github.com/googleapis/googleapis:. \
@@ -36,5 +36,15 @@ protoc-test-gql: build-graphql-gateway-debug
 		--go_out=plugins=grpc:. \
 		--graphql-gateway-debug_out=logtostderr=true:. \
 		example/sample/proto/red/*.proto
+
+gen-example-photo_share: build-graphql-gateway-debug
+	protoc \
+		-I=${GOPATH}/src:. \
+		-I=${GOPATH}/src/github.com/googleapis/googleapis:. \
+		-I=${GOPATH}/src/github.com/grpc-custom:. \
+		--plugin=./protoc-gen-graphql-gateway-debug \
+		--go_out=plugins=grpc:. \
+		--graphql-gateway-debug_out=logtostderr=true:. \
+		example/photo_share/proto/photo/*.proto
 
 .PHONY: gazelle protofmt protoc

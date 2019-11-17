@@ -34,6 +34,7 @@ message Field {
     string default_string = 3;
     int64  default_number = 4;
   }
+  bool inline = 5;
 }
 
 message Object {

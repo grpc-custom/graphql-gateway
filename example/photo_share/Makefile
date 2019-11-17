@@ -3,3 +3,6 @@ gateway-server:
 
 photo-server:
 	go run ./photo/main.go
+
+user-server:
+	go run ./user/main.go

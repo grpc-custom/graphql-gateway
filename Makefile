@@ -47,4 +47,13 @@ gen-example-photo_share: build-graphql-gateway-debug
 		--graphql-gateway-debug_out=logtostderr=true:. \
 		example/photo_share/proto/photo/*.proto
 
+	protoc \
+		-I=${GOPATH}/src:. \
+		-I=${GOPATH}/src/github.com/googleapis/googleapis:. \
+		-I=${GOPATH}/src/github.com/grpc-custom:. \
+		--plugin=./protoc-gen-graphql-gateway-debug \
+		--go_out=plugins=grpc:. \
+		--graphql-gateway-debug_out=logtostderr=true:. \
+		example/photo_share/proto/user/*.proto
+
 .PHONY: gazelle protofmt protoc

@@ -55,13 +55,13 @@ func (p *PhotoService) TotalPhotos(ctx context.Context, _ *empty.Empty) (*photo.
 	if ok {
 		fmt.Println(md.Get("Authorization"))
 	}
-	var total int
+	var total int32
 	p.data.Range(func(_, _ interface{}) bool {
 		total++
 		return true
 	})
 	resp := &photo.TotalPhotosResponse{
-		Total: int32(total),
+		Total: total,
 	}
 	return resp, nil
 }

@@ -1,7 +1,65 @@
 syntax = "proto3";
 
+package user;
+
+import "github.com/grpc-custom/graphql-gateway/graphql.proto";
+import "google/protobuf/empty.proto";
+
 message User {
   string github_login = 1;
   string name         = 2;
   string avatar       = 3;
+}
+
+message UserResponse {
+  User user = 1;
+}
+
+message TotalUsersResponse {
+  int32 total = 1;
+}
+
+message AllUsersResponse {
+  repeated User users = 1;
+}
+
+message LoginRequest {
+  string login = 1;
+}
+
+message GithubAuthRequest {
+  string code = 1;
+}
+
+message GithubAuthResponse {
+  string token = 1;
+  User   user  = 2;
+}
+
+service UserServer {
+  rpc Me(google.protobuf.Empty) returns (UserResponse) {
+    option (grpc_custom.graphql.schema) = {
+      query: "me"
+    };
+  }
+  rpc TotalUsers(google.protobuf.Empty) returns (TotalUsersResponse) {
+    option (grpc_custom.graphql.schema) = {
+      query: "totalUsers"
+    };
+  }
+  rpc AllUsers(google.protobuf.Empty) returns (AllUsersResponse) {
+    option (grpc_custom.graphql.schema) = {
+      query: "allUsers"
+    };
+  }
+  rpc User(LoginRequest) returns (UserResponse) {
+    option (grpc_custom.graphql.schema) = {
+      query: "user"
+    };
+  }
+  rpc GithubAuth(GithubAuthRequest) returns (GithubAuthResponse) {
+    option (grpc_custom.graphql.schema) = {
+      mutation: "githubAuth"
+    };
+  }
 }

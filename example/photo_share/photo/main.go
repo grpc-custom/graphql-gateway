@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -15,12 +14,7 @@ import (
 )
 
 func main() {
-	var (
-		port = flag.Int("port", 9001, "port number")
-	)
-	flag.Parse()
-
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	lis, err := net.Listen("tcp", ":9001")
 	if err != nil {
 		log.Fatal(err)
 	}

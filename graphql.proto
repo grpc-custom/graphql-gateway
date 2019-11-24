@@ -18,13 +18,18 @@ extend google.protobuf.MessageOptions {
   Object object = 88916;
 }
 
+message InternalCache {
+  int32 ttl = 1;
+}
+
 message Schema {
   oneof type {
     string query     = 1;
     string mutation  = 2;
     string subscribe = 3;
   }
-  string description = 4;
+  string        description    = 4;
+  InternalCache internal_cache = 5;
 }
 
 message Field {

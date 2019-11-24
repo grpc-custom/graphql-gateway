@@ -9,14 +9,8 @@ protoc:
 build-graphql-gateway-debug:
 	go build -o protoc-gen-graphql-gateway-debug ./cmd/protoc-gen-graphql-gateway/main.go
 
-graphql-gateway-debug: build-graphql-gateway-debug
-	protoc \
-		-I=${GOPATH}/src:. \
-		-I=${GOPATH}/src/github.com/googleapis/googleapis:. \
-        -I=${GOPATH}/src/github.com/grpc-custom:. \
-        --plugin=./protoc-gen-graphql-gateway-debug \
-       	--graphql-gateway-debug_out=logtostderr=true:. \
-        test/basic/user.proto
+build-graphql-schema-debug:
+	go build -o protoc-gen-graphql-schema-debug ./cmd/protoc-gen-graphql-schema/main.go
 
 gen-example-sample: build-graphql-gateway-debug
 	protoc \
@@ -55,5 +49,15 @@ gen-example-photo_share: build-graphql-gateway-debug
 		--go_out=plugins=grpc:. \
 		--graphql-gateway-debug_out=logtostderr=true:. \
 		example/photo_share/proto/user/*.proto
+
+gen-example-photo_share-schema: build-graphql-schema-debug
+	protoc \
+		-I=${GOPATH}/src:. \
+		-I=${GOPATH}/src/github.com/googleapis/googleapis:. \
+		-I=${GOPATH}/src/github.com/grpc-custom:. \
+		--plugin=./protoc-gen-graphql-schema-debug \
+		--go_out=plugins=grpc:. \
+		--graphql-schema-debug_out=logtostderr=true:. \
+		example/photo_share/proto/photo/*.proto
 
 .PHONY: gazelle protofmt protoc

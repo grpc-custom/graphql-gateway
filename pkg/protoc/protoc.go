@@ -7,14 +7,14 @@ import (
 	"go/format"
 	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/grpc-custom/graphql-gateway/pkg/registry"
 
 	"github.com/golang/glog"
 	"github.com/golang/protobuf/proto"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"github.com/grpc-custom/graphql-gateway/pkg/registry"
 )
 
 func ParseRequest(r io.Reader) (*plugin.CodeGeneratorRequest, error) {
@@ -61,4 +61,28 @@ func Filename(file *registry.File) string {
 func SourceCode(buf *bytes.Buffer) (string, error) {
 	code, err := format.Source(buf.Bytes())
 	return string(code), err
+}
+
+func EmitError(err error) {
+	res := &plugin.CodeGeneratorResponse{
+		Error: proto.String(err.Error()),
+	}
+	emitResp(res)
+}
+
+func EmitFile(out []*plugin.CodeGeneratorResponse_File) {
+	res := &plugin.CodeGeneratorResponse{
+		File: out,
+	}
+	emitResp(res)
+}
+
+func emitResp(resp *plugin.CodeGeneratorResponse) {
+	buf, err := proto.Marshal(resp)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	if _, err := os.Stdout.Write(buf); err != nil {
+		glog.Fatal(err)
+	}
 }

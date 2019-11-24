@@ -46,7 +46,7 @@ func main() {
 
 	reg := registry.New()
 	if err := reg.Apply(req); err != nil {
-		emitError(err)
+		protoc.EmitError(err)
 		return
 	}
 
@@ -55,7 +55,7 @@ func main() {
 	for _, filePath := range req.FileToGenerate {
 		file, err := reg.LookupFile(filePath)
 		if err != nil {
-			emitError(err)
+			protoc.EmitError(err)
 			return
 		}
 
@@ -64,7 +64,7 @@ func main() {
 			for _, method := range svc.Methods {
 				dep, err := reg.LookupMsg("", method.GetInputType())
 				if err != nil {
-					emitError(err)
+					protoc.EmitError(err)
 					return
 				}
 				if dep != nil && file.GoPkg != dep.File.GoPkg {
@@ -76,7 +76,7 @@ func main() {
 					}
 					dependence, err := reg.LookupMsg(file.GetPackage(), field.GetTypeName())
 					if err != nil {
-						emitError(err)
+						protoc.EmitError(err)
 						return
 					}
 					if file.GoPkg.String() == dependence.File.GoPkg.String() {
@@ -93,14 +93,14 @@ func main() {
 				case field.IsEnumType():
 					enum, err := reg.LookupEnum(file.GetPackage(), field.GetTypeName())
 					if err != nil {
-						emitError(err)
+						protoc.EmitError(err)
 						return
 					}
 					field.Enum = enum
 				case field.IsMessageType():
 					dependence, err := reg.LookupMsg(file.GetPackage(), field.GetTypeName())
 					if err != nil {
-						emitError(err)
+						protoc.EmitError(err)
 						return
 					}
 					field.Dependence = dependence
@@ -112,13 +112,13 @@ func main() {
 		// generate source code
 		out, err := generate(file, imports)
 		if err != nil {
-			emitError(err)
+			protoc.EmitError(err)
 			return
 		}
 		files = append(files, out)
 	}
 
-	emitFiles(files)
+	protoc.EmitFile(files)
 }
 
 func generate(
@@ -155,24 +155,4 @@ func generate(
 		Content: proto.String(code),
 	}
 	return out, nil
-}
-
-func emitError(err error) {
-	emitResp(&plugin.CodeGeneratorResponse{Error: proto.String(err.Error())})
-}
-
-func emitFiles(out []*plugin.CodeGeneratorResponse_File) {
-	emitResp(&plugin.CodeGeneratorResponse{
-		File: out,
-	})
-}
-
-func emitResp(resp *plugin.CodeGeneratorResponse) {
-	buf, err := proto.Marshal(resp)
-	if err != nil {
-		glog.Fatal(err)
-	}
-	if _, err := os.Stdout.Write(buf); err != nil {
-		glog.Fatal(err)
-	}
 }

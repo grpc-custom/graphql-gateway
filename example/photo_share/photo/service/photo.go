@@ -54,6 +54,8 @@ func (p *PhotoService) TotalPhotos(ctx context.Context, _ *empty.Empty) (*photo.
 	md, ok := metadata.FromIncomingContext(ctx)
 	if ok {
 		fmt.Println(md.Get("Authorization"))
+		fmt.Println(md.Get("X-Forwarded-For"))
+		fmt.Println(md.Get("graphqlgateway-user-agent"))
 	}
 	var total int32
 	p.data.Range(func(_, _ interface{}) bool {

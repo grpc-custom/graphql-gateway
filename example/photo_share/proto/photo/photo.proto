@@ -54,6 +54,9 @@ service PhotoService {
   rpc TotalPhotos(google.protobuf.Empty) returns (TotalPhotosResponse) {
     option (grpc_custom.graphql.schema) = {
       query: "totalPhotos"
+      internal_cache {
+        ttl: 120
+      }
     };
   }
   rpc AllPhotos(google.protobuf.Empty) returns (AllPhotosResponse) {

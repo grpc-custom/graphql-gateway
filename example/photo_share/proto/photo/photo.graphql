@@ -1,0 +1,59 @@
+scalar Int32
+scalar Int64
+scalar Timestamp
+scalar Empty
+
+type Photo {
+    id: String
+    name: String
+    url: String
+    description: String
+    category: PhotoCategory
+    created: Timestamp
+}
+
+enum PhotoCategory {
+    SELFIE
+    PORTRAIT
+    ACTION
+    LANDSCAPE
+    GRAPHIC
+}
+
+type TotalPhotosResponse {
+    total: Int32
+}
+
+type AllPhotosResponse {
+    photos: [Photo]
+}
+
+type PhotoResponse {
+    photo: Photo
+}
+
+input PhotoRequest {
+    id: String
+}
+
+input PostPhotoRequest {
+    name: String
+    category: PhotoCategory
+    description: String
+}
+
+input TagPhotoRequest {
+    githubLogin: String
+    photoId: String
+}
+
+type Query {
+    totalPhotos: TotalPhotosResponse
+    allPhotos: AllPhotosResponse
+    photo(request: PhotoRequest): PhotoResponse
+}
+
+type Mutation {
+    postPhoto(request: PostPhotoRequest): PhotoResponse
+    tagPhoto(request: TagPhotoRequest): Empty
+}

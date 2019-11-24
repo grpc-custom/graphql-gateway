@@ -1,10 +1,12 @@
 package runtime
 
 import (
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/graphql-go/graphql"
 	jsoniter "github.com/json-iterator/go"
@@ -14,6 +16,8 @@ const (
 	acceptHeader              = "Accept"
 	contentTypeHeader         = "Content-Type"
 	authorizationHeader       = "Authorization"
+	xForwardedForHeader       = "X-Forwarded-For"
+	xForwardedHostHeader      = "X-Forwarded-Host"
 	applicationJSON           = "application/json"
 	applicationGraphQL        = "application/graphql"
 	applicationFormURLEncoded = "application/x-www-form-urlencoded"
@@ -51,8 +55,7 @@ func (s *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	token := r.Header.Get(authorizationHeader)
-	ctx = SetAuthToken(ctx, token)
+	ctx = AnnotateContext(ctx, r)
 	params := graphql.Params{
 		Context:        ctx,
 		Schema:         *s.schema,
@@ -80,16 +83,16 @@ func (s *ServeMux) newGraphQLRequest(r *http.Request) (*graphQLRequest, error) {
 		return &graphQLRequest{}, nil
 	}
 
-	defer r.Body.Close()
+	defer s.closeBody(r)
 
 	typ := r.Header.Get(contentTypeHeader)
 	switch {
 	case strings.HasPrefix(typ, applicationGraphQL):
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
+		buf := &strings.Builder{}
+		if _, err := io.Copy(buf, r.Body); err != nil {
 			return nil, err
 		}
-		return &graphQLRequest{Query: string(body)}, nil
+		return &graphQLRequest{Query: buf.String()}, nil
 	case strings.HasPrefix(typ, applicationFormURLEncoded):
 		if err := r.ParseForm(); err != nil {
 			return nil, err
@@ -103,6 +106,11 @@ func (s *ServeMux) newGraphQLRequest(r *http.Request) (*graphQLRequest, error) {
 		}
 		return req, nil
 	}
+}
+
+func (s *ServeMux) closeBody(r *http.Request) error {
+	io.Copy(ioutil.Discard, r.Body)
+	return r.Body.Close()
 }
 
 func (s *ServeMux) getQueryRequest(values url.Values) (*graphQLRequest, error) {
@@ -143,30 +151,25 @@ func (s *ServeMux) AddSubscribe(name string, field *graphql.Field) {
 }
 
 func NewServeMux() (*ServeMux, error) {
+	dateField := dateResolver()
 	schema, err := graphql.NewSchema(graphql.SchemaConfig{
 		Query: graphql.NewObject(graphql.ObjectConfig{
 			Name: "Query",
 			Fields: graphql.Fields{
-				"__date": &graphql.Field{
-					Type: graphql.DateTime,
-				},
+				dateField.Name: dateField,
 			},
 		}),
 		Mutation: graphql.NewObject(graphql.ObjectConfig{
 			Name: "Mutation",
 			Fields: graphql.Fields{
-				"__date": &graphql.Field{
-					Type: graphql.DateTime,
-				},
+				dateField.Name: dateField,
 			},
 		}),
 		// TODO
 		Subscription: graphql.NewObject(graphql.ObjectConfig{
 			Name: "Subscription",
 			Fields: graphql.Fields{
-				"__date": &graphql.Field{
-					Type: graphql.DateTime,
-				},
+				dateField.Name: dateField,
 			},
 		}),
 	})
@@ -178,4 +181,14 @@ func NewServeMux() (*ServeMux, error) {
 		schema:   &schema,
 	}
 	return serveMux, nil
+}
+
+func dateResolver() *graphql.Field {
+	return &graphql.Field{
+		Name: "__date",
+		Type: graphql.DateTime,
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			return time.Now(), nil
+		},
+	}
 }

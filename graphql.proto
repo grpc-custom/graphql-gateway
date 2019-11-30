@@ -18,8 +18,8 @@ extend google.protobuf.MessageOptions {
   Object object = 88916;
 }
 
-message InternalCache {
-  int32 ttl = 1;
+message CacheControl {
+  int32 max_age = 1;
 }
 
 message Schema {
@@ -28,8 +28,8 @@ message Schema {
     string mutation  = 2;
     string subscribe = 3;
   }
-  string        description    = 4;
-  InternalCache internal_cache = 5;
+  string       description   = 4;
+  CacheControl cache_control = 5;
 }
 
 message Field {

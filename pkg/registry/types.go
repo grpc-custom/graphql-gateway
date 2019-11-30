@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/golang/protobuf/protoc-gen-go/generator"
+	graphql "github.com/grpc-custom/graphql-gateway/proto"
 )
 
 type GoPackage struct {
@@ -105,11 +106,12 @@ type Method struct {
 	Request  *Message
 	Response *Message
 	// GraphQL plugin options
-	Description string
-	FieldName   string
-	Query       bool
-	Mutation    bool
-	Subscribe   bool
+	Description  string
+	FieldName    string
+	Query        bool
+	Mutation     bool
+	Subscribe    bool
+	CacheControl *graphql.CacheControl
 }
 
 func (m *Method) FullMethod() string {
@@ -118,6 +120,19 @@ func (m *Method) FullMethod() string {
 
 func (m *Method) HasGraphQLMethod() bool {
 	return m.Query || m.Mutation || m.Subscribe
+}
+
+func (m *Method) GraphQLMethod() string {
+	switch {
+	case m.Query:
+		return "Query"
+	case m.Mutation:
+		return "Mutation"
+	case m.Subscribe:
+		return "Subscribe"
+	default:
+		return ""
+	}
 }
 
 func (m *Method) Variable() string {

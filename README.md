@@ -3,8 +3,13 @@
 todo
 
 - message pack
+- cache control
+  - singleflight
+  - in memory cache
+  - redis
+  - memcache
 - graphql schema
 - subscribe
-- internal cache
+  - websocket
 - data loader
 - open trace

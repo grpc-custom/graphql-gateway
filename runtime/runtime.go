@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/graphql-go/graphql"
+	"github.com/grpc-custom/graphql-gateway/runtime/codec"
 	jsoniter "github.com/json-iterator/go"
+	"golang.org/x/sync/singleflight"
 )
 
 const (
@@ -37,6 +39,7 @@ type ServeMux struct {
 	graphiQL    bool
 	schema      *graphql.Schema
 	middlewares []func(http.Handler) http.Handler
+	SharedGroup singleflight.Group
 }
 
 func (s *ServeMux) Use(middlewares ...func(http.Handler) http.Handler) {
@@ -63,11 +66,15 @@ func (s *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		VariableValues: req.Variables,
 		OperationName:  req.OperationName,
 	}
+	accept := r.Header.Get(acceptHeader)
+	contentType := r.Header.Get(contentTypeHeader)
 	ret := graphql.Do(params)
-	w.Header().Set(contentTypeHeader, applicationJSON)
+	w.Header().Set(acceptHeader, accept)
+	w.Header().Set(contentTypeHeader, contentType)
 	w.WriteHeader(http.StatusOK)
-	json := jsoniter.ConfigCompatibleWithStandardLibrary
-	json.NewEncoder(w).Encode(ret)
+	if err := codec.NewEncoder(w).Encode(ret); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (s *ServeMux) newGraphQLRequest(r *http.Request) (*graphQLRequest, error) {
@@ -100,8 +107,7 @@ func (s *ServeMux) newGraphQLRequest(r *http.Request) (*graphQLRequest, error) {
 		return s.getQueryRequest(r.PostForm)
 	default:
 		req := &graphQLRequest{}
-		json := jsoniter.ConfigCompatibleWithStandardLibrary
-		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+		if err := codec.NewDecoder(r).Decode(req); err != nil {
 			return nil, err
 		}
 		return req, nil

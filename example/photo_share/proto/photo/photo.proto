@@ -54,19 +54,25 @@ service PhotoService {
   rpc TotalPhotos(google.protobuf.Empty) returns (TotalPhotosResponse) {
     option (grpc_custom.graphql.schema) = {
       query: "totalPhotos"
-      internal_cache {
-        ttl: 120
+      cache_control {
+        max_age: 120
       }
     };
   }
   rpc AllPhotos(google.protobuf.Empty) returns (AllPhotosResponse) {
     option (grpc_custom.graphql.schema) = {
       query: "allPhotos"
+      cache_control {
+        max_age: 120
+      }
     };
   }
   rpc Photo(PhotoRequest) returns (PhotoResponse) {
     option (grpc_custom.graphql.schema) = {
       query: "photo"
+      cache_control {
+        max_age: 60
+      }
     };
   }
   rpc PostPhoto(PostPhotoRequest) returns (PhotoResponse) {

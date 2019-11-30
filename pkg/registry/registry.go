@@ -85,8 +85,7 @@ func (r *Registry) applyMsg(file *File, outerPath []string, msgs []*descriptor.D
 				Message:              m,
 				FieldDescriptorProto: fd,
 			}
-			if proto.HasExtension(fd.Options, options.E_Field) {
-				ext, _ := proto.GetExtension(fd.Options, options.E_Field)
+			if ext, err := proto.GetExtension(fd.Options, options.E_Field); err == nil {
 				if opts, ok := ext.(*options.Field); ok {
 					field.Description = opts.Description
 					field.Nullable = &opts.Nullable
@@ -164,8 +163,7 @@ func (r *Registry) newMethod(svc *Service, md *descriptor.MethodDescriptorProto)
 		Response:              response,
 	}
 
-	if proto.HasExtension(md.Options, options.E_Schema) {
-		ext, _ := proto.GetExtension(md.Options, options.E_Schema)
+	if ext, err := proto.GetExtension(md.Options, options.E_Schema); err == nil {
 		if opts, ok := ext.(*options.Schema); ok {
 			m.Description = opts.Description
 			switch t := opts.Type.(type) {
@@ -179,6 +177,10 @@ func (r *Registry) newMethod(svc *Service, md *descriptor.MethodDescriptorProto)
 				m.Subscribe = true
 				m.FieldName = t.Subscribe
 			}
+			if (m.Mutation || m.Subscribe) && opts.CacheControl != nil {
+				return nil, fmt.Errorf("invalid cache control option.\n\r %s: \"%s\"", m.GraphQLMethod(), m.FieldName)
+			}
+			m.CacheControl = opts.CacheControl
 		}
 	}
 

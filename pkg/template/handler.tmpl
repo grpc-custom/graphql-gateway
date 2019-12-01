@@ -1,4 +1,76 @@
 {{ range $svc := .Services }}
+    type {{ $svc.GetName }}Resolver struct {
+        client {{ $svc.GetName }}Client
+        group singleflight.Group
+        c cache.Cache
+    }
+
+    func new{{ $svc.GetName }}Resolver(client {{ $svc.GetName }}Client) *{{ $svc.GetName }}Resolver {
+        return &{{ $svc.GetName }}Resolver{
+            client: client,
+            group: singleflight.Group{},
+            c: cache.New(100),
+        }
+    }
+
+    {{ range $method := $svc.Methods -}}
+        {{ if $method.HasGraphQLMethod -}}
+            func (r *{{ $svc.GetName }}Resolver) Field{{ $method.GetName }}() *graphql.Field {
+                field := &graphql.Field{
+                    Name: "{{ $method.FullMethod }}",
+                    Description: "{{ $method.Description }}",
+                    Type: {{ $method.Response.GetSchemaTypeName }},
+                    Args: graphql.FieldConfigArgument{
+                    {{ range $field := $method.Request.Fields -}}
+                        "{{ $field.GetJsonName }}": &graphql.ArgumentConfig{
+                            Type: {{ $field.ScalarType }},
+                        },
+                    {{ end }}
+                    },
+                    Resolve: r.resolve{{ $method.GetName }},
+                }
+                return field
+            }
+
+            func (r *{{ $svc.GetName }}Resolver) resolve{{ $method.GetName }}(p graphql.ResolveParams) (interface{}, error) {
+                in := &{{ $method.Request.GetGoTypeName }}{}
+                {{ range $field := $method.Request.Fields -}}
+                    {{ $field.Variable }}, ok := p.Args["{{ $field.GetJsonName }}"].({{ $field.GoType }})
+                    if !ok {
+                    {{ if $field.IsNullable -}}
+                        {{ $field.Variable }} = {{ $field.GoDefaultValue }}
+                    {{ else -}}
+                        return nil, runtime.ErrInvalidArguments
+                    {{ end -}}
+                    }
+                    in.{{ $field.FieldName }} = {{ $field.Variable }}
+                {{ end -}}
+                ctx := runtime.Context(p.Context)
+                {{ if $method.CacheControl -}}
+                    // cache control max age: {{ $method.CacheControl.MaxAge.Seconds }} second
+                    key := cache.GenerateKey("{{ $method.FullMethod }}", in)
+                    value, ok := r.c.Get(key)
+                    if ok {
+                        return value, nil
+                    }
+                    result, err, _ := r.group.Do(key, func() (interface{}, error) {
+                        return r.client.{{ $method.GetName }}(ctx, in)
+                    })
+                    if err == nil {
+                        r.c.Set(key, result, {{ $method.CacheControl.MaxAge.Seconds }}*time.Second)
+                    }
+                    return result, err
+                {{ else -}}
+                    return r.client.{{ $method.GetName }}(ctx, in)
+                {{ end -}}
+            }
+
+        {{ end -}}
+    {{ end -}}
+
+{{ end -}}
+
+{{ range $svc := .Services }}
 func Register{{ $svc.GetName }}{{ $.RegisterFuncSuffix }}FromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
     conn, err := grpc.DialContext(ctx, endpoint, opts...)
     if err != nil {
@@ -26,43 +98,16 @@ func Register{{ $svc.GetName }}{{ $.RegisterFuncSuffix }}Handler(mux *runtime.Se
 }
 
 func Register{{ $svc.GetName }}{{ $.RegisterFuncSuffix }}HandlerClient(mux *runtime.ServeMux, client {{ $svc.GetName }}Client) error {
+    svc := new{{ $svc.GetName }}Resolver(client)
 {{ range $method := $svc.Methods -}}
     {{ if $method.HasGraphQLMethod -}}
         // gRPC {{ $method.FullMethod }}
-        {{ $method.Variable }} := &graphql.Field{
-            Name: "{{ $method.FullMethod }}",
-            Description: "{{ $method.Description }}",
-            Type: {{ $method.Response.GetSchemaTypeName }},
-            Args: graphql.FieldConfigArgument{
-                {{ range $field := $method.Request.Fields -}}
-                    "{{ $field.GetJsonName }}": &graphql.ArgumentConfig{
-                        Type: {{ $field.ScalarType }},
-                    },
-                {{ end }}
-            },
-            Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-                in := &{{ $method.Request.GetGoTypeName }}{}
-                {{ range $field := $method.Request.Fields -}}
-                    {{ $field.Variable }}, ok := p.Args["{{ $field.GetJsonName }}"].({{ $field.GoType }})
-                    if !ok {
-                    {{ if $field.IsNullable -}}
-                        {{ $field.Variable }} = {{ $field.GoDefaultValue }}
-                    {{ else -}}
-                        return nil, runtime.ErrInvalidArguments
-                    {{ end -}}
-                    }
-                    in.{{ $field.FieldName }} = {{ $field.Variable }}
-                {{ end -}}
-                ctx := runtime.Context(p.Context)
-                return client.{{ $method.GetName }}(ctx, in)
-            },
-        }
         {{ if $method.Query -}}
-            mux.AddQuery("{{ $method.FieldName }}", {{ $method.Variable }})
+            mux.AddQuery("{{ $method.FieldName }}", svc.Field{{ $method.GetName }}())
         {{ else if $method.Mutation -}}
-            mux.AddMutation("{{ $method.FieldName }}", {{ $method.Variable }})
+            mux.AddMutation("{{ $method.FieldName }}", svc.Field{{ $method.GetName }}())
         {{ else if $method.Subscribe -}}
-            mux.AddSubscribe("{{ $method.FieldName }}", {{ $method.Variable }})
+            mux.AddSubscribe("{{ $method.FieldName }}", svc.Field{{ $method.GetName }}())
         {{ end -}}
     {{ end -}}
 {{ end -}}

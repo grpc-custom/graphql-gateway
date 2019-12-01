@@ -70,6 +70,11 @@ func main() {
 				if dep != nil && file.GoPkg != dep.File.GoPkg {
 					imports = append(imports, dep.File.GoPkg)
 				}
+				if method.CacheControl != nil {
+					imports = append(imports, &registry.GoPackage{
+						Path: "time",
+					})
+				}
 				for _, field := range method.Request.Fields {
 					if !field.IsMessageType() {
 						continue

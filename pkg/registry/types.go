@@ -3,10 +3,10 @@ package registry
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/golang/protobuf/protoc-gen-go/generator"
-	graphql "github.com/grpc-custom/graphql-gateway/proto"
 )
 
 type GoPackage struct {
@@ -111,7 +111,7 @@ type Method struct {
 	Query        bool
 	Mutation     bool
 	Subscribe    bool
-	CacheControl *graphql.CacheControl
+	CacheControl *CacheControl
 }
 
 func (m *Method) FullMethod() string {
@@ -139,6 +139,10 @@ func (m *Method) Variable() string {
 	name := generator.CamelCase(m.GetName()) + "Field"
 	name = strings.ToLower(name[0:1]) + name[1:]
 	return name
+}
+
+type CacheControl struct {
+	MaxAge time.Duration
 }
 
 type Field struct {

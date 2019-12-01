@@ -5,6 +5,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/golang/protobuf/proto"
@@ -180,7 +181,13 @@ func (r *Registry) newMethod(svc *Service, md *descriptor.MethodDescriptorProto)
 			if (m.Mutation || m.Subscribe) && opts.CacheControl != nil {
 				return nil, fmt.Errorf("invalid cache control option.\n\r %s: \"%s\"", m.GraphQLMethod(), m.FieldName)
 			}
-			m.CacheControl = opts.CacheControl
+			if opts.CacheControl != nil {
+				m.CacheControl = &CacheControl{}
+				m.CacheControl.MaxAge, err = time.ParseDuration(opts.CacheControl.MaxAge)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 	}
 

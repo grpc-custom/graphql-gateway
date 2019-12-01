@@ -19,7 +19,7 @@ extend google.protobuf.MessageOptions {
 }
 
 message CacheControl {
-  int32 max_age = 1;
+  string max_age = 1;
 }
 
 message Schema {

@@ -55,7 +55,7 @@ service PhotoService {
     option (grpc_custom.graphql.schema) = {
       query: "totalPhotos"
       cache_control {
-        max_age: 120
+        max_age: "120s"
       }
     };
   }
@@ -63,7 +63,7 @@ service PhotoService {
     option (grpc_custom.graphql.schema) = {
       query: "allPhotos"
       cache_control {
-        max_age: 120
+        max_age: "120s"
       }
     };
   }
@@ -71,7 +71,7 @@ service PhotoService {
     option (grpc_custom.graphql.schema) = {
       query: "photo"
       cache_control {
-        max_age: 60
+        max_age: "60s"
       }
     };
   }

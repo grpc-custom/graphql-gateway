@@ -1,9 +1,11 @@
 package cache
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	lru "github.com/hashicorp/golang-lru"
 )
 
@@ -95,4 +97,9 @@ func (c *cache) Set(key string, value interface{}, ttl time.Duration) {
 		item = newItem(key, value, ttl)
 	}
 	c.setItem(item)
+}
+
+func GenerateKey(name string, msg proto.Message) string {
+	const format = "%s%s"
+	return fmt.Sprintf(format, name, msg.String())
 }

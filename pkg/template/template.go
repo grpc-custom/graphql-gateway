@@ -20,6 +20,8 @@ func GenerateImports(file *registry.File, imports ...*registry.GoPackage) ([]byt
 		"github.com/graphql-go/graphql",
 		"github.com/grpc-custom/graphql-gateway/runtime",
 		"github.com/grpc-custom/graphql-gateway/runtime/scalar",
+		"github.com/grpc-custom/graphql-gateway/runtime/cache",
+		"golang.org/x/sync/singleflight",
 		"google.golang.org/grpc",
 		"google.golang.org/grpc/grpclog",
 	} {

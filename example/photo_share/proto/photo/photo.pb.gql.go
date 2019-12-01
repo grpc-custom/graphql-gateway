@@ -10,11 +10,14 @@ package photo
 
 import (
 	"context"
+	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/graphql-go/graphql"
 	"github.com/grpc-custom/graphql-gateway/runtime"
+	"github.com/grpc-custom/graphql-gateway/runtime/cache"
 	"github.com/grpc-custom/graphql-gateway/runtime/scalar"
+	"golang.org/x/sync/singleflight"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 )
@@ -108,6 +111,192 @@ var (
 	})
 )
 
+type PhotoServiceResolver struct {
+	client PhotoServiceClient
+	group  singleflight.Group
+	c      cache.Cache
+}
+
+func newPhotoServiceResolver(client PhotoServiceClient) *PhotoServiceResolver {
+	return &PhotoServiceResolver{
+		client: client,
+		group:  singleflight.Group{},
+		c:      cache.New(100),
+	}
+}
+
+func (r *PhotoServiceResolver) FieldTotalPhotos() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/photo.PhotoService/TotalPhotos",
+		Description: "",
+		Type:        totalPhotosResponseType,
+		Args:        graphql.FieldConfigArgument{},
+		Resolve:     r.resolveTotalPhotos,
+	}
+	return field
+}
+
+func (r *PhotoServiceResolver) resolveTotalPhotos(p graphql.ResolveParams) (interface{}, error) {
+	in := &empty.Empty{}
+	ctx := runtime.Context(p.Context)
+	// cache control max age: 120 second
+	key := cache.GenerateKey("/photo.PhotoService/TotalPhotos", in)
+	value, ok := r.c.Get(key)
+	if ok {
+		return value, nil
+	}
+	result, err, _ := r.group.Do(key, func() (interface{}, error) {
+		return r.client.TotalPhotos(ctx, in)
+	})
+	if err == nil {
+		r.c.Set(key, result, 120*time.Second)
+	}
+	return result, err
+}
+
+func (r *PhotoServiceResolver) FieldAllPhotos() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/photo.PhotoService/AllPhotos",
+		Description: "",
+		Type:        allPhotosResponseType,
+		Args:        graphql.FieldConfigArgument{},
+		Resolve:     r.resolveAllPhotos,
+	}
+	return field
+}
+
+func (r *PhotoServiceResolver) resolveAllPhotos(p graphql.ResolveParams) (interface{}, error) {
+	in := &empty.Empty{}
+	ctx := runtime.Context(p.Context)
+	// cache control max age: 120 second
+	key := cache.GenerateKey("/photo.PhotoService/AllPhotos", in)
+	value, ok := r.c.Get(key)
+	if ok {
+		return value, nil
+	}
+	result, err, _ := r.group.Do(key, func() (interface{}, error) {
+		return r.client.AllPhotos(ctx, in)
+	})
+	if err == nil {
+		r.c.Set(key, result, 120*time.Second)
+	}
+	return result, err
+}
+
+func (r *PhotoServiceResolver) FieldPhoto() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/photo.PhotoService/Photo",
+		Description: "",
+		Type:        photoResponseType,
+		Args: graphql.FieldConfigArgument{
+			"id": &graphql.ArgumentConfig{
+				Type: scalar.String,
+			},
+		},
+		Resolve: r.resolvePhoto,
+	}
+	return field
+}
+
+func (r *PhotoServiceResolver) resolvePhoto(p graphql.ResolveParams) (interface{}, error) {
+	in := &PhotoRequest{}
+	valueId, ok := p.Args["id"].(string)
+	if !ok {
+		valueId = ""
+	}
+	in.Id = valueId
+	ctx := runtime.Context(p.Context)
+	// cache control max age: 60 second
+	key := cache.GenerateKey("/photo.PhotoService/Photo", in)
+	value, ok := r.c.Get(key)
+	if ok {
+		return value, nil
+	}
+	result, err, _ := r.group.Do(key, func() (interface{}, error) {
+		return r.client.Photo(ctx, in)
+	})
+	if err == nil {
+		r.c.Set(key, result, 60*time.Second)
+	}
+	return result, err
+}
+
+func (r *PhotoServiceResolver) FieldPostPhoto() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/photo.PhotoService/PostPhoto",
+		Description: "",
+		Type:        photoResponseType,
+		Args: graphql.FieldConfigArgument{
+			"name": &graphql.ArgumentConfig{
+				Type: scalar.String,
+			},
+			"category": &graphql.ArgumentConfig{
+				Type: scalar.Int32,
+			},
+			"description": &graphql.ArgumentConfig{
+				Type: scalar.String,
+			},
+		},
+		Resolve: r.resolvePostPhoto,
+	}
+	return field
+}
+
+func (r *PhotoServiceResolver) resolvePostPhoto(p graphql.ResolveParams) (interface{}, error) {
+	in := &PostPhotoRequest{}
+	valueName, ok := p.Args["name"].(string)
+	if !ok {
+		valueName = ""
+	}
+	in.Name = valueName
+	valueCategory, ok := p.Args["category"].(PhotoCategory)
+	if !ok {
+		valueCategory = 0
+	}
+	in.Category = valueCategory
+	valueDescription, ok := p.Args["description"].(string)
+	if !ok {
+		valueDescription = ""
+	}
+	in.Description = valueDescription
+	ctx := runtime.Context(p.Context)
+	return r.client.PostPhoto(ctx, in)
+}
+
+func (r *PhotoServiceResolver) FieldTagPhoto() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/photo.PhotoService/TagPhoto",
+		Description: "",
+		Type:        scalar.Empty,
+		Args: graphql.FieldConfigArgument{
+			"githubLogin": &graphql.ArgumentConfig{
+				Type: scalar.String,
+			},
+			"photoId": &graphql.ArgumentConfig{
+				Type: scalar.String,
+			},
+		},
+		Resolve: r.resolveTagPhoto,
+	}
+	return field
+}
+
+func (r *PhotoServiceResolver) resolveTagPhoto(p graphql.ResolveParams) (interface{}, error) {
+	in := &TagPhotoRequest{}
+	valueGithubLogin, ok := p.Args["githubLogin"].(string)
+	if !ok {
+		valueGithubLogin = ""
+	}
+	in.GithubLogin = valueGithubLogin
+	valuePhotoId, ok := p.Args["photoId"].(string)
+	if !ok {
+		valuePhotoId = ""
+	}
+	in.PhotoId = valuePhotoId
+	ctx := runtime.Context(p.Context)
+	return r.client.TagPhoto(ctx, in)
+}
+
 func RegisterPhotoServiceFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.DialContext(ctx, endpoint, opts...)
 	if err != nil {
@@ -135,121 +324,16 @@ func RegisterPhotoServiceHandler(mux *runtime.ServeMux, conn *grpc.ClientConn) e
 }
 
 func RegisterPhotoServiceHandlerClient(mux *runtime.ServeMux, client PhotoServiceClient) error {
+	svc := newPhotoServiceResolver(client)
 	// gRPC /photo.PhotoService/TotalPhotos
-	totalPhotosField := &graphql.Field{
-		Name:        "/photo.PhotoService/TotalPhotos",
-		Description: "",
-		Type:        totalPhotosResponseType,
-		Args:        graphql.FieldConfigArgument{},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &empty.Empty{}
-			ctx := runtime.Context(p.Context)
-			return client.TotalPhotos(ctx, in)
-		},
-	}
-	mux.AddQuery("totalPhotos", totalPhotosField)
+	mux.AddQuery("totalPhotos", svc.FieldTotalPhotos())
 	// gRPC /photo.PhotoService/AllPhotos
-	allPhotosField := &graphql.Field{
-		Name:        "/photo.PhotoService/AllPhotos",
-		Description: "",
-		Type:        allPhotosResponseType,
-		Args:        graphql.FieldConfigArgument{},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &empty.Empty{}
-			ctx := runtime.Context(p.Context)
-			return client.AllPhotos(ctx, in)
-		},
-	}
-	mux.AddQuery("allPhotos", allPhotosField)
+	mux.AddQuery("allPhotos", svc.FieldAllPhotos())
 	// gRPC /photo.PhotoService/Photo
-	photoField := &graphql.Field{
-		Name:        "/photo.PhotoService/Photo",
-		Description: "",
-		Type:        photoResponseType,
-		Args: graphql.FieldConfigArgument{
-			"id": &graphql.ArgumentConfig{
-				Type: scalar.String,
-			},
-		},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &PhotoRequest{}
-			valueId, ok := p.Args["id"].(string)
-			if !ok {
-				valueId = ""
-			}
-			in.Id = valueId
-			ctx := runtime.Context(p.Context)
-			return client.Photo(ctx, in)
-		},
-	}
-	mux.AddQuery("photo", photoField)
+	mux.AddQuery("photo", svc.FieldPhoto())
 	// gRPC /photo.PhotoService/PostPhoto
-	postPhotoField := &graphql.Field{
-		Name:        "/photo.PhotoService/PostPhoto",
-		Description: "",
-		Type:        photoResponseType,
-		Args: graphql.FieldConfigArgument{
-			"name": &graphql.ArgumentConfig{
-				Type: scalar.String,
-			},
-			"category": &graphql.ArgumentConfig{
-				Type: scalar.Int32,
-			},
-			"description": &graphql.ArgumentConfig{
-				Type: scalar.String,
-			},
-		},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &PostPhotoRequest{}
-			valueName, ok := p.Args["name"].(string)
-			if !ok {
-				valueName = ""
-			}
-			in.Name = valueName
-			valueCategory, ok := p.Args["category"].(PhotoCategory)
-			if !ok {
-				valueCategory = 0
-			}
-			in.Category = valueCategory
-			valueDescription, ok := p.Args["description"].(string)
-			if !ok {
-				valueDescription = ""
-			}
-			in.Description = valueDescription
-			ctx := runtime.Context(p.Context)
-			return client.PostPhoto(ctx, in)
-		},
-	}
-	mux.AddMutation("postPhoto", postPhotoField)
+	mux.AddMutation("postPhoto", svc.FieldPostPhoto())
 	// gRPC /photo.PhotoService/TagPhoto
-	tagPhotoField := &graphql.Field{
-		Name:        "/photo.PhotoService/TagPhoto",
-		Description: "",
-		Type:        scalar.Empty,
-		Args: graphql.FieldConfigArgument{
-			"githubLogin": &graphql.ArgumentConfig{
-				Type: scalar.String,
-			},
-			"photoId": &graphql.ArgumentConfig{
-				Type: scalar.String,
-			},
-		},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &TagPhotoRequest{}
-			valueGithubLogin, ok := p.Args["githubLogin"].(string)
-			if !ok {
-				valueGithubLogin = ""
-			}
-			in.GithubLogin = valueGithubLogin
-			valuePhotoId, ok := p.Args["photoId"].(string)
-			if !ok {
-				valuePhotoId = ""
-			}
-			in.PhotoId = valuePhotoId
-			ctx := runtime.Context(p.Context)
-			return client.TagPhoto(ctx, in)
-		},
-	}
-	mux.AddMutation("tagPhoto", tagPhotoField)
+	mux.AddMutation("tagPhoto", svc.FieldTagPhoto())
 	return nil
 }

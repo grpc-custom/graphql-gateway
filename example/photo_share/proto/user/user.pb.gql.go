@@ -14,7 +14,9 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/graphql-go/graphql"
 	"github.com/grpc-custom/graphql-gateway/runtime"
+	"github.com/grpc-custom/graphql-gateway/runtime/cache"
 	"github.com/grpc-custom/graphql-gateway/runtime/scalar"
+	"golang.org/x/sync/singleflight"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 )
@@ -93,6 +95,123 @@ var (
 	})
 )
 
+type UserServerResolver struct {
+	client UserServerClient
+	group  singleflight.Group
+	c      cache.Cache
+}
+
+func newUserServerResolver(client UserServerClient) *UserServerResolver {
+	return &UserServerResolver{
+		client: client,
+		group:  singleflight.Group{},
+		c:      cache.New(100),
+	}
+}
+
+func (r *UserServerResolver) FieldMe() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/user.UserServer/Me",
+		Description: "",
+		Type:        userResponseType,
+		Args:        graphql.FieldConfigArgument{},
+		Resolve:     r.resolveMe,
+	}
+	return field
+}
+
+func (r *UserServerResolver) resolveMe(p graphql.ResolveParams) (interface{}, error) {
+	in := &empty.Empty{}
+	ctx := runtime.Context(p.Context)
+	return r.client.Me(ctx, in)
+}
+
+func (r *UserServerResolver) FieldTotalUsers() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/user.UserServer/TotalUsers",
+		Description: "",
+		Type:        totalUsersResponseType,
+		Args:        graphql.FieldConfigArgument{},
+		Resolve:     r.resolveTotalUsers,
+	}
+	return field
+}
+
+func (r *UserServerResolver) resolveTotalUsers(p graphql.ResolveParams) (interface{}, error) {
+	in := &empty.Empty{}
+	ctx := runtime.Context(p.Context)
+	return r.client.TotalUsers(ctx, in)
+}
+
+func (r *UserServerResolver) FieldAllUsers() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/user.UserServer/AllUsers",
+		Description: "",
+		Type:        allUsersResponseType,
+		Args:        graphql.FieldConfigArgument{},
+		Resolve:     r.resolveAllUsers,
+	}
+	return field
+}
+
+func (r *UserServerResolver) resolveAllUsers(p graphql.ResolveParams) (interface{}, error) {
+	in := &empty.Empty{}
+	ctx := runtime.Context(p.Context)
+	return r.client.AllUsers(ctx, in)
+}
+
+func (r *UserServerResolver) FieldUser() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/user.UserServer/User",
+		Description: "",
+		Type:        userResponseType,
+		Args: graphql.FieldConfigArgument{
+			"login": &graphql.ArgumentConfig{
+				Type: scalar.String,
+			},
+		},
+		Resolve: r.resolveUser,
+	}
+	return field
+}
+
+func (r *UserServerResolver) resolveUser(p graphql.ResolveParams) (interface{}, error) {
+	in := &LoginRequest{}
+	valueLogin, ok := p.Args["login"].(string)
+	if !ok {
+		valueLogin = ""
+	}
+	in.Login = valueLogin
+	ctx := runtime.Context(p.Context)
+	return r.client.User(ctx, in)
+}
+
+func (r *UserServerResolver) FieldGithubAuth() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/user.UserServer/GithubAuth",
+		Description: "",
+		Type:        githubAuthResponseType,
+		Args: graphql.FieldConfigArgument{
+			"code": &graphql.ArgumentConfig{
+				Type: scalar.String,
+			},
+		},
+		Resolve: r.resolveGithubAuth,
+	}
+	return field
+}
+
+func (r *UserServerResolver) resolveGithubAuth(p graphql.ResolveParams) (interface{}, error) {
+	in := &GithubAuthRequest{}
+	valueCode, ok := p.Args["code"].(string)
+	if !ok {
+		valueCode = ""
+	}
+	in.Code = valueCode
+	ctx := runtime.Context(p.Context)
+	return r.client.GithubAuth(ctx, in)
+}
+
 func RegisterUserServerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.DialContext(ctx, endpoint, opts...)
 	if err != nil {
@@ -120,88 +239,16 @@ func RegisterUserServerHandler(mux *runtime.ServeMux, conn *grpc.ClientConn) err
 }
 
 func RegisterUserServerHandlerClient(mux *runtime.ServeMux, client UserServerClient) error {
+	svc := newUserServerResolver(client)
 	// gRPC /user.UserServer/Me
-	meField := &graphql.Field{
-		Name:        "/user.UserServer/Me",
-		Description: "",
-		Type:        userResponseType,
-		Args:        graphql.FieldConfigArgument{},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &empty.Empty{}
-			ctx := runtime.Context(p.Context)
-			return client.Me(ctx, in)
-		},
-	}
-	mux.AddQuery("me", meField)
+	mux.AddQuery("me", svc.FieldMe())
 	// gRPC /user.UserServer/TotalUsers
-	totalUsersField := &graphql.Field{
-		Name:        "/user.UserServer/TotalUsers",
-		Description: "",
-		Type:        totalUsersResponseType,
-		Args:        graphql.FieldConfigArgument{},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &empty.Empty{}
-			ctx := runtime.Context(p.Context)
-			return client.TotalUsers(ctx, in)
-		},
-	}
-	mux.AddQuery("totalUsers", totalUsersField)
+	mux.AddQuery("totalUsers", svc.FieldTotalUsers())
 	// gRPC /user.UserServer/AllUsers
-	allUsersField := &graphql.Field{
-		Name:        "/user.UserServer/AllUsers",
-		Description: "",
-		Type:        allUsersResponseType,
-		Args:        graphql.FieldConfigArgument{},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &empty.Empty{}
-			ctx := runtime.Context(p.Context)
-			return client.AllUsers(ctx, in)
-		},
-	}
-	mux.AddQuery("allUsers", allUsersField)
+	mux.AddQuery("allUsers", svc.FieldAllUsers())
 	// gRPC /user.UserServer/User
-	userField := &graphql.Field{
-		Name:        "/user.UserServer/User",
-		Description: "",
-		Type:        userResponseType,
-		Args: graphql.FieldConfigArgument{
-			"login": &graphql.ArgumentConfig{
-				Type: scalar.String,
-			},
-		},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &LoginRequest{}
-			valueLogin, ok := p.Args["login"].(string)
-			if !ok {
-				valueLogin = ""
-			}
-			in.Login = valueLogin
-			ctx := runtime.Context(p.Context)
-			return client.User(ctx, in)
-		},
-	}
-	mux.AddQuery("user", userField)
+	mux.AddQuery("user", svc.FieldUser())
 	// gRPC /user.UserServer/GithubAuth
-	githubAuthField := &graphql.Field{
-		Name:        "/user.UserServer/GithubAuth",
-		Description: "",
-		Type:        githubAuthResponseType,
-		Args: graphql.FieldConfigArgument{
-			"code": &graphql.ArgumentConfig{
-				Type: scalar.String,
-			},
-		},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &GithubAuthRequest{}
-			valueCode, ok := p.Args["code"].(string)
-			if !ok {
-				valueCode = ""
-			}
-			in.Code = valueCode
-			ctx := runtime.Context(p.Context)
-			return client.GithubAuth(ctx, in)
-		},
-	}
-	mux.AddMutation("githubAuth", githubAuthField)
+	mux.AddMutation("githubAuth", svc.FieldGithubAuth())
 	return nil
 }

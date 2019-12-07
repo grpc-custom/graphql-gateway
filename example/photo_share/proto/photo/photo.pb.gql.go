@@ -16,6 +16,7 @@ import (
 	"github.com/graphql-go/graphql"
 	"github.com/grpc-custom/graphql-gateway/runtime"
 	"github.com/grpc-custom/graphql-gateway/runtime/cache"
+	"github.com/grpc-custom/graphql-gateway/runtime/errors"
 	"github.com/grpc-custom/graphql-gateway/runtime/scalar"
 	"golang.org/x/sync/singleflight"
 	"google.golang.org/grpc"
@@ -148,10 +149,11 @@ func (r *PhotoServiceResolver) resolveTotalPhotos(p graphql.ResolveParams) (inte
 	result, err, _ := r.group.Do(key, func() (interface{}, error) {
 		return r.client.TotalPhotos(ctx, in)
 	})
-	if err == nil {
-		r.c.Set(key, result, 120*time.Second)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
 	}
-	return result, err
+	r.c.Set(key, result, 120*time.Second)
+	return result, nil
 }
 
 func (r *PhotoServiceResolver) FieldAllPhotos() *graphql.Field {
@@ -177,10 +179,11 @@ func (r *PhotoServiceResolver) resolveAllPhotos(p graphql.ResolveParams) (interf
 	result, err, _ := r.group.Do(key, func() (interface{}, error) {
 		return r.client.AllPhotos(ctx, in)
 	})
-	if err == nil {
-		r.c.Set(key, result, 120*time.Second)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
 	}
-	return result, err
+	r.c.Set(key, result, 120*time.Second)
+	return result, nil
 }
 
 func (r *PhotoServiceResolver) FieldPhoto() *graphql.Field {
@@ -215,10 +218,11 @@ func (r *PhotoServiceResolver) resolvePhoto(p graphql.ResolveParams) (interface{
 	result, err, _ := r.group.Do(key, func() (interface{}, error) {
 		return r.client.Photo(ctx, in)
 	})
-	if err == nil {
-		r.c.Set(key, result, 60*time.Second)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
 	}
-	return result, err
+	r.c.Set(key, result, 60*time.Second)
+	return result, nil
 }
 
 func (r *PhotoServiceResolver) FieldPostPhoto() *graphql.Field {
@@ -260,7 +264,11 @@ func (r *PhotoServiceResolver) resolvePostPhoto(p graphql.ResolveParams) (interf
 	}
 	in.Description = valueDescription
 	ctx := runtime.Context(p.Context)
-	return r.client.PostPhoto(ctx, in)
+	result, err := r.client.PostPhoto(ctx, in)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
+	}
+	return result, nil
 }
 
 func (r *PhotoServiceResolver) FieldTagPhoto() *graphql.Field {
@@ -294,7 +302,11 @@ func (r *PhotoServiceResolver) resolveTagPhoto(p graphql.ResolveParams) (interfa
 	}
 	in.PhotoId = valuePhotoId
 	ctx := runtime.Context(p.Context)
-	return r.client.TagPhoto(ctx, in)
+	result, err := r.client.TagPhoto(ctx, in)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
+	}
+	return result, nil
 }
 
 func RegisterPhotoServiceFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {

@@ -2,6 +2,8 @@
 
 todo
 
+- error handling
+- enum (string)
 - message pack
 - cache control
   - singleflight

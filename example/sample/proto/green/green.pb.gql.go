@@ -13,7 +13,10 @@ import (
 
 	"github.com/graphql-go/graphql"
 	"github.com/grpc-custom/graphql-gateway/runtime"
+	"github.com/grpc-custom/graphql-gateway/runtime/cache"
+	"github.com/grpc-custom/graphql-gateway/runtime/errors"
 	"github.com/grpc-custom/graphql-gateway/runtime/scalar"
+	"golang.org/x/sync/singleflight"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 )
@@ -104,6 +107,88 @@ var (
 	})
 )
 
+type GreenServiceResolver struct {
+	client GreenServiceClient
+	group  singleflight.Group
+	c      cache.Cache
+}
+
+func newGreenServiceResolver(client GreenServiceClient) *GreenServiceResolver {
+	return &GreenServiceResolver{
+		client: client,
+		group:  singleflight.Group{},
+		c:      cache.New(100),
+	}
+}
+
+func (r *GreenServiceResolver) FieldList() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/green.GreenService/List",
+		Description: "",
+		Type:        listResponseType,
+		Args: graphql.FieldConfigArgument{
+			"nextToken": &graphql.ArgumentConfig{
+				Type: scalar.String,
+			},
+			"size": &graphql.ArgumentConfig{
+				Type: graphql.NewNonNull(scalar.Int32),
+			},
+		},
+		Resolve: r.resolveList,
+	}
+	return field
+}
+
+func (r *GreenServiceResolver) resolveList(p graphql.ResolveParams) (interface{}, error) {
+	in := &ListRequest{}
+	valueNextToken, ok := p.Args["nextToken"].(string)
+	if !ok {
+		valueNextToken = ""
+	}
+	in.NextToken = valueNextToken
+	valueSize, ok := p.Args["size"].(int32)
+	if !ok {
+		return nil, errors.ErrInvalidArguments
+	}
+	in.Size = valueSize
+	ctx := runtime.Context(p.Context)
+	result, err := r.client.List(ctx, in)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
+	}
+	return result, nil
+}
+
+func (r *GreenServiceResolver) FieldGet() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/green.GreenService/Get",
+		Description: "",
+		Type:        getResponseType,
+		Args: graphql.FieldConfigArgument{
+			"id": &graphql.ArgumentConfig{
+				Type: scalar.String,
+			},
+		},
+		Resolve: r.resolveGet,
+	}
+	return field
+}
+
+func (r *GreenServiceResolver) resolveGet(p graphql.ResolveParams) (interface{}, error) {
+	in := &GetRequest{}
+	valueId, ok := p.Args["id"].(string)
+	if !ok {
+		valueId = ""
+	}
+	in.Id = valueId
+	ctx := runtime.Context(p.Context)
+	result, err := r.client.Get(ctx, in)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
+	}
+	return result, nil
+}
+
 func RegisterGreenServiceFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.DialContext(ctx, endpoint, opts...)
 	if err != nil {
@@ -131,57 +216,10 @@ func RegisterGreenServiceHandler(mux *runtime.ServeMux, conn *grpc.ClientConn) e
 }
 
 func RegisterGreenServiceHandlerClient(mux *runtime.ServeMux, client GreenServiceClient) error {
+	svc := newGreenServiceResolver(client)
 	// gRPC /green.GreenService/List
-	listField := &graphql.Field{
-		Name:        "/green.GreenService/List",
-		Description: "",
-		Type:        listResponseType,
-		Args: graphql.FieldConfigArgument{
-			"nextToken": &graphql.ArgumentConfig{
-				Type: scalar.String,
-			},
-			"size": &graphql.ArgumentConfig{
-				Type: graphql.NewNonNull(scalar.Int32),
-			},
-		},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &ListRequest{}
-			valueNextToken, ok := p.Args["nextToken"].(string)
-			if !ok {
-				valueNextToken = ""
-			}
-			in.NextToken = valueNextToken
-			valueSize, ok := p.Args["size"].(int32)
-			if !ok {
-				return nil, runtime.ErrInvalidArguments
-			}
-			in.Size = valueSize
-			ctx := runtime.Context(p.Context)
-			return client.List(ctx, in)
-		},
-	}
-	mux.AddQuery("listGreens", listField)
+	mux.AddQuery("listGreens", svc.FieldList())
 	// gRPC /green.GreenService/Get
-	getField := &graphql.Field{
-		Name:        "/green.GreenService/Get",
-		Description: "",
-		Type:        getResponseType,
-		Args: graphql.FieldConfigArgument{
-			"id": &graphql.ArgumentConfig{
-				Type: scalar.String,
-			},
-		},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &GetRequest{}
-			valueId, ok := p.Args["id"].(string)
-			if !ok {
-				valueId = ""
-			}
-			in.Id = valueId
-			ctx := runtime.Context(p.Context)
-			return client.Get(ctx, in)
-		},
-	}
-	mux.AddQuery("getGreen", getField)
+	mux.AddQuery("getGreen", svc.FieldGet())
 	return nil
 }

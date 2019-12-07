@@ -13,7 +13,10 @@ import (
 
 	"github.com/graphql-go/graphql"
 	"github.com/grpc-custom/graphql-gateway/runtime"
+	"github.com/grpc-custom/graphql-gateway/runtime/cache"
+	"github.com/grpc-custom/graphql-gateway/runtime/errors"
 	"github.com/grpc-custom/graphql-gateway/runtime/scalar"
+	"golang.org/x/sync/singleflight"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 )
@@ -158,6 +161,210 @@ var (
 	})
 )
 
+type RedServiceResolver struct {
+	client RedServiceClient
+	group  singleflight.Group
+	c      cache.Cache
+}
+
+func newRedServiceResolver(client RedServiceClient) *RedServiceResolver {
+	return &RedServiceResolver{
+		client: client,
+		group:  singleflight.Group{},
+		c:      cache.New(100),
+	}
+}
+
+func (r *RedServiceResolver) FieldGet() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/red.RedService/Get",
+		Description: "gets a red",
+		Type:        getResponseType,
+		Args: graphql.FieldConfigArgument{
+			"id": &graphql.ArgumentConfig{
+				Type: graphql.NewNonNull(scalar.Int32),
+			},
+		},
+		Resolve: r.resolveGet,
+	}
+	return field
+}
+
+func (r *RedServiceResolver) resolveGet(p graphql.ResolveParams) (interface{}, error) {
+	in := &GetRequest{}
+	valueId, ok := p.Args["id"].(int32)
+	if !ok {
+		return nil, errors.ErrInvalidArguments
+	}
+	in.Id = valueId
+	ctx := runtime.Context(p.Context)
+	result, err := r.client.Get(ctx, in)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
+	}
+	return result, nil
+}
+
+func (r *RedServiceResolver) FieldList() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/red.RedService/List",
+		Description: "list red",
+		Type:        listResponseType,
+		Args: graphql.FieldConfigArgument{
+			"offset": &graphql.ArgumentConfig{
+				Type: scalar.Int32,
+			},
+			"limit": &graphql.ArgumentConfig{
+				Type: scalar.Int32,
+			},
+			"size": &graphql.ArgumentConfig{
+				Type: scalar.Int32,
+			},
+			"filters": &graphql.ArgumentConfig{
+				Type: graphql.NewList(scalar.Int32),
+			},
+		},
+		Resolve: r.resolveList,
+	}
+	return field
+}
+
+func (r *RedServiceResolver) resolveList(p graphql.ResolveParams) (interface{}, error) {
+	in := &ListRequest{}
+	valueOffset, ok := p.Args["offset"].(int32)
+	if !ok {
+		valueOffset = 0
+	}
+	in.Offset = valueOffset
+	valueLimit, ok := p.Args["limit"].(int32)
+	if !ok {
+		valueLimit = 0
+	}
+	in.Limit = valueLimit
+	valueSize, ok := p.Args["size"].(Size)
+	if !ok {
+		valueSize = 0
+	}
+	in.Size = valueSize
+	valueFilters, ok := p.Args["filters"].([]ListRequest_Type)
+	if !ok {
+		valueFilters = nil
+	}
+	in.Filters = valueFilters
+	ctx := runtime.Context(p.Context)
+	result, err := r.client.List(ctx, in)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
+	}
+	return result, nil
+}
+
+func (r *RedServiceResolver) FieldCreate() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/red.RedService/Create",
+		Description: "creates new red",
+		Type:        createResponseType,
+		Args: graphql.FieldConfigArgument{
+			"id": &graphql.ArgumentConfig{
+				Type: scalar.Int32,
+			},
+			"name": &graphql.ArgumentConfig{
+				Type: scalar.String,
+			},
+		},
+		Resolve: r.resolveCreate,
+	}
+	return field
+}
+
+func (r *RedServiceResolver) resolveCreate(p graphql.ResolveParams) (interface{}, error) {
+	in := &CreateRequest{}
+	valueId, ok := p.Args["id"].(int32)
+	if !ok {
+		valueId = 0
+	}
+	in.Id = valueId
+	valueName, ok := p.Args["name"].(string)
+	if !ok {
+		valueName = ""
+	}
+	in.Name = valueName
+	ctx := runtime.Context(p.Context)
+	result, err := r.client.Create(ctx, in)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
+	}
+	return result, nil
+}
+
+func (r *RedServiceResolver) FieldUpdate() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/red.RedService/Update",
+		Description: "updates a red",
+		Type:        updateResponseType,
+		Args: graphql.FieldConfigArgument{
+			"id": &graphql.ArgumentConfig{
+				Type: scalar.Int32,
+			},
+			"name": &graphql.ArgumentConfig{
+				Type: scalar.String,
+			},
+		},
+		Resolve: r.resolveUpdate,
+	}
+	return field
+}
+
+func (r *RedServiceResolver) resolveUpdate(p graphql.ResolveParams) (interface{}, error) {
+	in := &UpdateRequest{}
+	valueId, ok := p.Args["id"].(int32)
+	if !ok {
+		valueId = 0
+	}
+	in.Id = valueId
+	valueName, ok := p.Args["name"].(string)
+	if !ok {
+		valueName = ""
+	}
+	in.Name = valueName
+	ctx := runtime.Context(p.Context)
+	result, err := r.client.Update(ctx, in)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
+	}
+	return result, nil
+}
+
+func (r *RedServiceResolver) FieldDelete() *graphql.Field {
+	field := &graphql.Field{
+		Name:        "/red.RedService/Delete",
+		Description: "deletes a red",
+		Type:        deleteResponseType,
+		Args: graphql.FieldConfigArgument{
+			"id": &graphql.ArgumentConfig{
+				Type: scalar.Int32,
+			},
+		},
+		Resolve: r.resolveDelete,
+	}
+	return field
+}
+
+func (r *RedServiceResolver) resolveDelete(p graphql.ResolveParams) (interface{}, error) {
+	in := &DeleteRequest{}
+	valueId, ok := p.Args["id"].(int32)
+	if !ok {
+		valueId = 0
+	}
+	in.Id = valueId
+	ctx := runtime.Context(p.Context)
+	result, err := r.client.Delete(ctx, in)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
+	}
+	return result, nil
+}
+
 func RegisterRedServiceFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.DialContext(ctx, endpoint, opts...)
 	if err != nil {
@@ -185,155 +392,16 @@ func RegisterRedServiceHandler(mux *runtime.ServeMux, conn *grpc.ClientConn) err
 }
 
 func RegisterRedServiceHandlerClient(mux *runtime.ServeMux, client RedServiceClient) error {
+	svc := newRedServiceResolver(client)
 	// gRPC /red.RedService/Get
-	getField := &graphql.Field{
-		Name:        "/red.RedService/Get",
-		Description: "gets a red",
-		Type:        getResponseType,
-		Args: graphql.FieldConfigArgument{
-			"id": &graphql.ArgumentConfig{
-				Type: graphql.NewNonNull(scalar.Int32),
-			},
-		},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &GetRequest{}
-			valueId, ok := p.Args["id"].(int32)
-			if !ok {
-				return nil, runtime.ErrInvalidArguments
-			}
-			in.Id = valueId
-			ctx := runtime.Context(p.Context)
-			return client.Get(ctx, in)
-		},
-	}
-	mux.AddQuery("getRed", getField)
+	mux.AddQuery("getRed", svc.FieldGet())
 	// gRPC /red.RedService/List
-	listField := &graphql.Field{
-		Name:        "/red.RedService/List",
-		Description: "list red",
-		Type:        listResponseType,
-		Args: graphql.FieldConfigArgument{
-			"offset": &graphql.ArgumentConfig{
-				Type: scalar.Int32,
-			},
-			"limit": &graphql.ArgumentConfig{
-				Type: scalar.Int32,
-			},
-			"size": &graphql.ArgumentConfig{
-				Type: scalar.Int32,
-			},
-			"filters": &graphql.ArgumentConfig{
-				Type: graphql.NewList(scalar.Int32),
-			},
-		},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &ListRequest{}
-			valueOffset, ok := p.Args["offset"].(int32)
-			if !ok {
-				valueOffset = 0
-			}
-			in.Offset = valueOffset
-			valueLimit, ok := p.Args["limit"].(int32)
-			if !ok {
-				valueLimit = 0
-			}
-			in.Limit = valueLimit
-			valueSize, ok := p.Args["size"].(Size)
-			if !ok {
-				valueSize = 0
-			}
-			in.Size = valueSize
-			valueFilters, ok := p.Args["filters"].([]ListRequest_Type)
-			if !ok {
-				valueFilters = nil
-			}
-			in.Filters = valueFilters
-			ctx := runtime.Context(p.Context)
-			return client.List(ctx, in)
-		},
-	}
-	mux.AddQuery("listReds", listField)
+	mux.AddQuery("listReds", svc.FieldList())
 	// gRPC /red.RedService/Create
-	createField := &graphql.Field{
-		Name:        "/red.RedService/Create",
-		Description: "creates new red",
-		Type:        createResponseType,
-		Args: graphql.FieldConfigArgument{
-			"id": &graphql.ArgumentConfig{
-				Type: scalar.Int32,
-			},
-			"name": &graphql.ArgumentConfig{
-				Type: scalar.String,
-			},
-		},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &CreateRequest{}
-			valueId, ok := p.Args["id"].(int32)
-			if !ok {
-				valueId = 0
-			}
-			in.Id = valueId
-			valueName, ok := p.Args["name"].(string)
-			if !ok {
-				valueName = ""
-			}
-			in.Name = valueName
-			ctx := runtime.Context(p.Context)
-			return client.Create(ctx, in)
-		},
-	}
-	mux.AddMutation("createRed", createField)
+	mux.AddMutation("createRed", svc.FieldCreate())
 	// gRPC /red.RedService/Update
-	updateField := &graphql.Field{
-		Name:        "/red.RedService/Update",
-		Description: "updates a red",
-		Type:        updateResponseType,
-		Args: graphql.FieldConfigArgument{
-			"id": &graphql.ArgumentConfig{
-				Type: scalar.Int32,
-			},
-			"name": &graphql.ArgumentConfig{
-				Type: scalar.String,
-			},
-		},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &UpdateRequest{}
-			valueId, ok := p.Args["id"].(int32)
-			if !ok {
-				valueId = 0
-			}
-			in.Id = valueId
-			valueName, ok := p.Args["name"].(string)
-			if !ok {
-				valueName = ""
-			}
-			in.Name = valueName
-			ctx := runtime.Context(p.Context)
-			return client.Update(ctx, in)
-		},
-	}
-	mux.AddMutation("updateRed", updateField)
+	mux.AddMutation("updateRed", svc.FieldUpdate())
 	// gRPC /red.RedService/Delete
-	deleteField := &graphql.Field{
-		Name:        "/red.RedService/Delete",
-		Description: "deletes a red",
-		Type:        deleteResponseType,
-		Args: graphql.FieldConfigArgument{
-			"id": &graphql.ArgumentConfig{
-				Type: scalar.Int32,
-			},
-		},
-		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			in := &DeleteRequest{}
-			valueId, ok := p.Args["id"].(int32)
-			if !ok {
-				valueId = 0
-			}
-			in.Id = valueId
-			ctx := runtime.Context(p.Context)
-			return client.Delete(ctx, in)
-		},
-	}
-	mux.AddMutation("deleteRed", deleteField)
+	mux.AddMutation("deleteRed", svc.FieldDelete())
 	return nil
 }

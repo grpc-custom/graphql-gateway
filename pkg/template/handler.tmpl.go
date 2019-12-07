@@ -49,7 +49,7 @@ var handlerTemplate = template.Must(template.New("handler").
                     {{ if $field.IsNullable -}}
                         {{ $field.Variable }} = {{ $field.GoDefaultValue }}
                     {{ else -}}
-                        return nil, runtime.ErrInvalidArguments
+                        return nil, errors.ErrInvalidArguments
                     {{ end -}}
                     }
                     in.{{ $field.FieldName }} = {{ $field.Variable }}
@@ -65,12 +65,17 @@ var handlerTemplate = template.Must(template.New("handler").
                     result, err, _ := r.group.Do(key, func() (interface{}, error) {
                         return r.client.{{ $method.GetName }}(ctx, in)
                     })
-                    if err == nil {
-                        r.c.Set(key, result, {{ $method.CacheControl.MaxAge.Seconds }}*time.Second)
+                    if err != nil {
+                        return nil, errors.ToGraphQLError(err)
                     }
-                    return result, err
+                    r.c.Set(key, result, {{ $method.CacheControl.MaxAge.Seconds }}*time.Second)
+                    return result, nil
                 {{ else -}}
-                    return r.client.{{ $method.GetName }}(ctx, in)
+                    result, err := r.client.{{ $method.GetName }}(ctx, in)
+                    if err != nil {
+                        return nil, errors.ToGraphQLError(err)
+                    }
+                    return result, nil
                 {{ end -}}
             }
 

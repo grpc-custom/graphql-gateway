@@ -2,6 +2,7 @@ package scalar
 
 import (
 	"encoding/base64"
+	"reflect"
 	"strconv"
 
 	"github.com/graphql-go/graphql"
@@ -343,6 +344,17 @@ func coerceInt32(value interface{}) interface{} {
 			return nil
 		}
 		return coerceInt32(*value)
+	}
+
+	rv := reflect.ValueOf(value)
+	switch rv.Kind() {
+	case
+		reflect.Int,
+		reflect.Int8,
+		reflect.Int16,
+		reflect.Int32,
+		reflect.Int64:
+		return int32(rv.Int())
 	}
 
 	// If the value cannot be transformed into an int, return nil instead of '0'

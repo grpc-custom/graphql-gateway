@@ -15,6 +15,7 @@ import (
 	"github.com/graphql-go/graphql"
 	"github.com/grpc-custom/graphql-gateway/runtime"
 	"github.com/grpc-custom/graphql-gateway/runtime/cache"
+	"github.com/grpc-custom/graphql-gateway/runtime/errors"
 	"github.com/grpc-custom/graphql-gateway/runtime/scalar"
 	"golang.org/x/sync/singleflight"
 	"google.golang.org/grpc"
@@ -123,7 +124,11 @@ func (r *UserServerResolver) FieldMe() *graphql.Field {
 func (r *UserServerResolver) resolveMe(p graphql.ResolveParams) (interface{}, error) {
 	in := &empty.Empty{}
 	ctx := runtime.Context(p.Context)
-	return r.client.Me(ctx, in)
+	result, err := r.client.Me(ctx, in)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
+	}
+	return result, nil
 }
 
 func (r *UserServerResolver) FieldTotalUsers() *graphql.Field {
@@ -140,7 +145,11 @@ func (r *UserServerResolver) FieldTotalUsers() *graphql.Field {
 func (r *UserServerResolver) resolveTotalUsers(p graphql.ResolveParams) (interface{}, error) {
 	in := &empty.Empty{}
 	ctx := runtime.Context(p.Context)
-	return r.client.TotalUsers(ctx, in)
+	result, err := r.client.TotalUsers(ctx, in)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
+	}
+	return result, nil
 }
 
 func (r *UserServerResolver) FieldAllUsers() *graphql.Field {
@@ -157,7 +166,11 @@ func (r *UserServerResolver) FieldAllUsers() *graphql.Field {
 func (r *UserServerResolver) resolveAllUsers(p graphql.ResolveParams) (interface{}, error) {
 	in := &empty.Empty{}
 	ctx := runtime.Context(p.Context)
-	return r.client.AllUsers(ctx, in)
+	result, err := r.client.AllUsers(ctx, in)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
+	}
+	return result, nil
 }
 
 func (r *UserServerResolver) FieldUser() *graphql.Field {
@@ -183,7 +196,11 @@ func (r *UserServerResolver) resolveUser(p graphql.ResolveParams) (interface{}, 
 	}
 	in.Login = valueLogin
 	ctx := runtime.Context(p.Context)
-	return r.client.User(ctx, in)
+	result, err := r.client.User(ctx, in)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
+	}
+	return result, nil
 }
 
 func (r *UserServerResolver) FieldGithubAuth() *graphql.Field {
@@ -209,7 +226,11 @@ func (r *UserServerResolver) resolveGithubAuth(p graphql.ResolveParams) (interfa
 	}
 	in.Code = valueCode
 	ctx := runtime.Context(p.Context)
-	return r.client.GithubAuth(ctx, in)
+	result, err := r.client.GithubAuth(ctx, in)
+	if err != nil {
+		return nil, errors.ToGraphQLError(err)
+	}
+	return result, nil
 }
 
 func RegisterUserServerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {

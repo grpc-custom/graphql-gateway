@@ -10,6 +10,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-custom/graphql-gateway/example/photo_share/proto/photo"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -85,6 +86,19 @@ func (p *PhotoService) AllPhotos(ctx context.Context, _ *empty.Empty) (*photo.Al
 }
 
 func (p *PhotoService) Photo(ctx context.Context, in *photo.PhotoRequest) (*photo.PhotoResponse, error) {
+	if in.Id == "error" {
+		err := status.New(codes.InvalidArgument, "some error")
+		detail := &errdetails.BadRequest{
+			FieldViolations: []*errdetails.BadRequest_FieldViolation{
+				{
+					Field:       "id",
+					Description: "invalid format",
+				},
+			},
+		}
+		dt, _ := err.WithDetails(detail)
+		return nil, dt.Err()
+	}
 	value, ok := p.data.Load(in.Id)
 	if !ok {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("no such photo data: %s", in.Id))

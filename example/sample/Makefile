@@ -7,4 +7,11 @@ green-server:
 gateway-server:
 	go run ./main.go
 
-.PHONY: red-server green-server
+protoc:
+	protoc \
+		-I=${GOPATH}/src:. \
+		--go_out=plugin=grpc:. \
+		--graphql-gateway_out=. \
+		./proto/red/*.proto
+
+.PHONY: red-server green-server gateway-server protoc

@@ -82,7 +82,7 @@ service RedService {
   rpc List(ListRequest) returns (ListResponse) {
     option (grpc_custom.graphql.schema) = {
       query: "listReds"
-      description: "list red"
+      description: "list red data"
     };
   }
 

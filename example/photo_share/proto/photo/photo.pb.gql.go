@@ -147,6 +147,11 @@ func (r *PhotoServiceResolver) resolveTotalPhotos(p graphql.ResolveParams) (inte
 		return value, nil
 	}
 	result, err, _ := r.group.Do(key, func() (interface{}, error) {
+		if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, timeout)
+			defer cancel()
+		}
 		return r.client.TotalPhotos(ctx, in)
 	})
 	if err != nil {
@@ -177,6 +182,11 @@ func (r *PhotoServiceResolver) resolveAllPhotos(p graphql.ResolveParams) (interf
 		return value, nil
 	}
 	result, err, _ := r.group.Do(key, func() (interface{}, error) {
+		if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, timeout)
+			defer cancel()
+		}
 		return r.client.AllPhotos(ctx, in)
 	})
 	if err != nil {
@@ -216,6 +226,11 @@ func (r *PhotoServiceResolver) resolvePhoto(p graphql.ResolveParams) (interface{
 		return value, nil
 	}
 	result, err, _ := r.group.Do(key, func() (interface{}, error) {
+		if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, timeout)
+			defer cancel()
+		}
 		return r.client.Photo(ctx, in)
 	})
 	if err != nil {
@@ -264,6 +279,11 @@ func (r *PhotoServiceResolver) resolvePostPhoto(p graphql.ResolveParams) (interf
 	}
 	in.Description = valueDescription
 	ctx := runtime.Context(p.Context)
+	if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
 	result, err := r.client.PostPhoto(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)
@@ -302,6 +322,11 @@ func (r *PhotoServiceResolver) resolveTagPhoto(p graphql.ResolveParams) (interfa
 	}
 	in.PhotoId = valuePhotoId
 	ctx := runtime.Context(p.Context)
+	if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
 	result, err := r.client.TagPhoto(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)

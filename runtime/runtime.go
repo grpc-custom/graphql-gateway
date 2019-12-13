@@ -58,7 +58,11 @@ func (s *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	ctx = AnnotateContext(ctx, r)
+	ctx, err = AnnotateContext(ctx, r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	params := graphql.Params{
 		Context:        ctx,
 		Schema:         *s.schema,

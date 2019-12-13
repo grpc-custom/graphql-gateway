@@ -7,13 +7,19 @@ import (
 	"net/http"
 	"net/textproto"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/metadata"
 )
 
 const (
-	MetadataPrefix = "graphqlgateway-"
+	MetadataPrefix      = "graphqlgateway-"
+	metadataGRPCTimeout = "Grpc-Timeout"
+)
+
+type (
+	timeoutKey struct{}
 )
 
 func Context(ctx context.Context) context.Context {
@@ -23,12 +29,24 @@ func Context(ctx context.Context) context.Context {
 	return ctx
 }
 
-func AnnotateContext(ctx context.Context, req *http.Request) context.Context {
-	md := annotateContext(ctx, req)
-	return metadata.NewOutgoingContext(ctx, md)
+func GrpcTimeout(ctx context.Context) time.Duration {
+	timeout := ctx.Value(timeoutKey{})
+	if timeout == nil {
+		return 0
+	}
+	return timeout.(time.Duration)
 }
 
-func annotateContext(ctx context.Context, req *http.Request) metadata.MD {
+func AnnotateContext(ctx context.Context, req *http.Request) (context.Context, error) {
+	ctx, err := requestGrpcTimeout(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	md := annotateContext(req)
+	return metadata.NewOutgoingContext(ctx, md), nil
+}
+
+func annotateContext(req *http.Request) metadata.MD {
 	var pairs []string
 	for key, vals := range req.Header {
 		for _, val := range vals {
@@ -106,4 +124,17 @@ func isPermanentHTTPHeader(h string) bool {
 		return true
 	}
 	return false
+}
+
+func requestGrpcTimeout(ctx context.Context, r *http.Request) (context.Context, error) {
+	tm := r.Header.Get(metadataGRPCTimeout)
+	if tm == "" {
+		return ctx, nil
+	}
+	timeout, err := time.ParseDuration(tm)
+	if err != nil {
+		return ctx, err
+	}
+	ctx = context.WithValue(ctx, timeoutKey{}, timeout)
+	return ctx, nil
 }

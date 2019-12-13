@@ -124,6 +124,11 @@ func (r *UserServerResolver) FieldMe() *graphql.Field {
 func (r *UserServerResolver) resolveMe(p graphql.ResolveParams) (interface{}, error) {
 	in := &empty.Empty{}
 	ctx := runtime.Context(p.Context)
+	if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
 	result, err := r.client.Me(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)
@@ -145,6 +150,11 @@ func (r *UserServerResolver) FieldTotalUsers() *graphql.Field {
 func (r *UserServerResolver) resolveTotalUsers(p graphql.ResolveParams) (interface{}, error) {
 	in := &empty.Empty{}
 	ctx := runtime.Context(p.Context)
+	if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
 	result, err := r.client.TotalUsers(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)
@@ -166,6 +176,11 @@ func (r *UserServerResolver) FieldAllUsers() *graphql.Field {
 func (r *UserServerResolver) resolveAllUsers(p graphql.ResolveParams) (interface{}, error) {
 	in := &empty.Empty{}
 	ctx := runtime.Context(p.Context)
+	if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
 	result, err := r.client.AllUsers(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)
@@ -196,6 +211,11 @@ func (r *UserServerResolver) resolveUser(p graphql.ResolveParams) (interface{}, 
 	}
 	in.Login = valueLogin
 	ctx := runtime.Context(p.Context)
+	if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
 	result, err := r.client.User(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)
@@ -226,6 +246,11 @@ func (r *UserServerResolver) resolveGithubAuth(p graphql.ResolveParams) (interfa
 	}
 	in.Code = valueCode
 	ctx := runtime.Context(p.Context)
+	if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
 	result, err := r.client.GithubAuth(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)

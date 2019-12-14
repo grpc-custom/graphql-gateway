@@ -100,6 +100,12 @@ type Service struct {
 	Methods []*Method
 }
 
+func (s *Service) PrivateServiceName() string {
+	name := s.GetName()
+	name = strings.ToLower(name[0:1]) + name[1:]
+	return name
+}
+
 type Method struct {
 	*descriptor.MethodDescriptorProto
 	Service  *Service

@@ -96,21 +96,21 @@ var (
 	})
 )
 
-type UserServerResolver struct {
+type userServerResolver struct {
 	client UserServerClient
 	group  singleflight.Group
 	c      cache.Cache
 }
 
-func newUserServerResolver(client UserServerClient) *UserServerResolver {
-	return &UserServerResolver{
+func newUserServerResolver(client UserServerClient) *userServerResolver {
+	return &userServerResolver{
 		client: client,
 		group:  singleflight.Group{},
 		c:      cache.New(100),
 	}
 }
 
-func (r *UserServerResolver) FieldMe() *graphql.Field {
+func (r *userServerResolver) FieldMe() *graphql.Field {
 	field := &graphql.Field{
 		Name:        "/user.UserServer/Me",
 		Description: "",
@@ -121,7 +121,7 @@ func (r *UserServerResolver) FieldMe() *graphql.Field {
 	return field
 }
 
-func (r *UserServerResolver) resolveMe(p graphql.ResolveParams) (interface{}, error) {
+func (r *userServerResolver) resolveMe(p graphql.ResolveParams) (interface{}, error) {
 	in := &empty.Empty{}
 	ctx := runtime.Context(p.Context)
 	if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
@@ -136,7 +136,7 @@ func (r *UserServerResolver) resolveMe(p graphql.ResolveParams) (interface{}, er
 	return result, nil
 }
 
-func (r *UserServerResolver) FieldTotalUsers() *graphql.Field {
+func (r *userServerResolver) FieldTotalUsers() *graphql.Field {
 	field := &graphql.Field{
 		Name:        "/user.UserServer/TotalUsers",
 		Description: "",
@@ -147,7 +147,7 @@ func (r *UserServerResolver) FieldTotalUsers() *graphql.Field {
 	return field
 }
 
-func (r *UserServerResolver) resolveTotalUsers(p graphql.ResolveParams) (interface{}, error) {
+func (r *userServerResolver) resolveTotalUsers(p graphql.ResolveParams) (interface{}, error) {
 	in := &empty.Empty{}
 	ctx := runtime.Context(p.Context)
 	if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
@@ -162,7 +162,7 @@ func (r *UserServerResolver) resolveTotalUsers(p graphql.ResolveParams) (interfa
 	return result, nil
 }
 
-func (r *UserServerResolver) FieldAllUsers() *graphql.Field {
+func (r *userServerResolver) FieldAllUsers() *graphql.Field {
 	field := &graphql.Field{
 		Name:        "/user.UserServer/AllUsers",
 		Description: "",
@@ -173,7 +173,7 @@ func (r *UserServerResolver) FieldAllUsers() *graphql.Field {
 	return field
 }
 
-func (r *UserServerResolver) resolveAllUsers(p graphql.ResolveParams) (interface{}, error) {
+func (r *userServerResolver) resolveAllUsers(p graphql.ResolveParams) (interface{}, error) {
 	in := &empty.Empty{}
 	ctx := runtime.Context(p.Context)
 	if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
@@ -188,7 +188,7 @@ func (r *UserServerResolver) resolveAllUsers(p graphql.ResolveParams) (interface
 	return result, nil
 }
 
-func (r *UserServerResolver) FieldUser() *graphql.Field {
+func (r *userServerResolver) FieldUser() *graphql.Field {
 	field := &graphql.Field{
 		Name:        "/user.UserServer/User",
 		Description: "",
@@ -203,7 +203,7 @@ func (r *UserServerResolver) FieldUser() *graphql.Field {
 	return field
 }
 
-func (r *UserServerResolver) resolveUser(p graphql.ResolveParams) (interface{}, error) {
+func (r *userServerResolver) resolveUser(p graphql.ResolveParams) (interface{}, error) {
 	in := &LoginRequest{}
 	valueLogin, ok := p.Args["login"].(string)
 	if !ok {
@@ -223,7 +223,7 @@ func (r *UserServerResolver) resolveUser(p graphql.ResolveParams) (interface{}, 
 	return result, nil
 }
 
-func (r *UserServerResolver) FieldGithubAuth() *graphql.Field {
+func (r *userServerResolver) FieldGithubAuth() *graphql.Field {
 	field := &graphql.Field{
 		Name:        "/user.UserServer/GithubAuth",
 		Description: "",
@@ -238,7 +238,7 @@ func (r *UserServerResolver) FieldGithubAuth() *graphql.Field {
 	return field
 }
 
-func (r *UserServerResolver) resolveGithubAuth(p graphql.ResolveParams) (interface{}, error) {
+func (r *userServerResolver) resolveGithubAuth(p graphql.ResolveParams) (interface{}, error) {
 	in := &GithubAuthRequest{}
 	valueCode, ok := p.Args["code"].(string)
 	if !ok {

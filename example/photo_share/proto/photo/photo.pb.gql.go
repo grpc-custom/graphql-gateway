@@ -112,21 +112,21 @@ var (
 	})
 )
 
-type PhotoServiceResolver struct {
+type photoServiceResolver struct {
 	client PhotoServiceClient
 	group  singleflight.Group
 	c      cache.Cache
 }
 
-func newPhotoServiceResolver(client PhotoServiceClient) *PhotoServiceResolver {
-	return &PhotoServiceResolver{
+func newPhotoServiceResolver(client PhotoServiceClient) *photoServiceResolver {
+	return &photoServiceResolver{
 		client: client,
 		group:  singleflight.Group{},
 		c:      cache.New(100),
 	}
 }
 
-func (r *PhotoServiceResolver) FieldTotalPhotos() *graphql.Field {
+func (r *photoServiceResolver) FieldTotalPhotos() *graphql.Field {
 	field := &graphql.Field{
 		Name:        "/photo.PhotoService/TotalPhotos",
 		Description: "",
@@ -137,7 +137,7 @@ func (r *PhotoServiceResolver) FieldTotalPhotos() *graphql.Field {
 	return field
 }
 
-func (r *PhotoServiceResolver) resolveTotalPhotos(p graphql.ResolveParams) (interface{}, error) {
+func (r *photoServiceResolver) resolveTotalPhotos(p graphql.ResolveParams) (interface{}, error) {
 	in := &empty.Empty{}
 	ctx := runtime.Context(p.Context)
 	// cache control max age: 120 second
@@ -161,7 +161,7 @@ func (r *PhotoServiceResolver) resolveTotalPhotos(p graphql.ResolveParams) (inte
 	return result, nil
 }
 
-func (r *PhotoServiceResolver) FieldAllPhotos() *graphql.Field {
+func (r *photoServiceResolver) FieldAllPhotos() *graphql.Field {
 	field := &graphql.Field{
 		Name:        "/photo.PhotoService/AllPhotos",
 		Description: "",
@@ -172,7 +172,7 @@ func (r *PhotoServiceResolver) FieldAllPhotos() *graphql.Field {
 	return field
 }
 
-func (r *PhotoServiceResolver) resolveAllPhotos(p graphql.ResolveParams) (interface{}, error) {
+func (r *photoServiceResolver) resolveAllPhotos(p graphql.ResolveParams) (interface{}, error) {
 	in := &empty.Empty{}
 	ctx := runtime.Context(p.Context)
 	// cache control max age: 120 second
@@ -196,7 +196,7 @@ func (r *PhotoServiceResolver) resolveAllPhotos(p graphql.ResolveParams) (interf
 	return result, nil
 }
 
-func (r *PhotoServiceResolver) FieldPhoto() *graphql.Field {
+func (r *photoServiceResolver) FieldPhoto() *graphql.Field {
 	field := &graphql.Field{
 		Name:        "/photo.PhotoService/Photo",
 		Description: "",
@@ -211,7 +211,7 @@ func (r *PhotoServiceResolver) FieldPhoto() *graphql.Field {
 	return field
 }
 
-func (r *PhotoServiceResolver) resolvePhoto(p graphql.ResolveParams) (interface{}, error) {
+func (r *photoServiceResolver) resolvePhoto(p graphql.ResolveParams) (interface{}, error) {
 	in := &PhotoRequest{}
 	valueId, ok := p.Args["id"].(string)
 	if !ok {
@@ -240,7 +240,7 @@ func (r *PhotoServiceResolver) resolvePhoto(p graphql.ResolveParams) (interface{
 	return result, nil
 }
 
-func (r *PhotoServiceResolver) FieldPostPhoto() *graphql.Field {
+func (r *photoServiceResolver) FieldPostPhoto() *graphql.Field {
 	field := &graphql.Field{
 		Name:        "/photo.PhotoService/PostPhoto",
 		Description: "",
@@ -261,7 +261,7 @@ func (r *PhotoServiceResolver) FieldPostPhoto() *graphql.Field {
 	return field
 }
 
-func (r *PhotoServiceResolver) resolvePostPhoto(p graphql.ResolveParams) (interface{}, error) {
+func (r *photoServiceResolver) resolvePostPhoto(p graphql.ResolveParams) (interface{}, error) {
 	in := &PostPhotoRequest{}
 	valueName, ok := p.Args["name"].(string)
 	if !ok {
@@ -291,7 +291,7 @@ func (r *PhotoServiceResolver) resolvePostPhoto(p graphql.ResolveParams) (interf
 	return result, nil
 }
 
-func (r *PhotoServiceResolver) FieldTagPhoto() *graphql.Field {
+func (r *photoServiceResolver) FieldTagPhoto() *graphql.Field {
 	field := &graphql.Field{
 		Name:        "/photo.PhotoService/TagPhoto",
 		Description: "",
@@ -309,7 +309,7 @@ func (r *PhotoServiceResolver) FieldTagPhoto() *graphql.Field {
 	return field
 }
 
-func (r *PhotoServiceResolver) resolveTagPhoto(p graphql.ResolveParams) (interface{}, error) {
+func (r *photoServiceResolver) resolveTagPhoto(p graphql.ResolveParams) (interface{}, error) {
 	in := &TagPhotoRequest{}
 	valueGithubLogin, ok := p.Args["githubLogin"].(string)
 	if !ok {

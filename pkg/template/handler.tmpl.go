@@ -8,14 +8,14 @@ import (
 var handlerTemplate = template.Must(template.New("handler").
 	Parse(`
 {{ range $svc := .Services }}
-    type {{ $svc.GetName }}Resolver struct {
+    type {{ $svc.PrivateServiceName }}Resolver struct {
         client {{ $svc.GetName }}Client
         group singleflight.Group
         c cache.Cache
     }
 
-    func new{{ $svc.GetName }}Resolver(client {{ $svc.GetName }}Client) *{{ $svc.GetName }}Resolver {
-        return &{{ $svc.GetName }}Resolver{
+    func new{{ $svc.GetName }}Resolver(client {{ $svc.GetName }}Client) *{{ $svc.PrivateServiceName }}Resolver {
+        return &{{ $svc.PrivateServiceName }}Resolver{
             client: client,
             group: singleflight.Group{},
             c: cache.New(100),
@@ -24,7 +24,7 @@ var handlerTemplate = template.Must(template.New("handler").
 
     {{ range $method := $svc.Methods -}}
         {{ if $method.HasGraphQLMethod -}}
-            func (r *{{ $svc.GetName }}Resolver) Field{{ $method.GetName }}() *graphql.Field {
+            func (r *{{ $svc.PrivateServiceName }}Resolver) Field{{ $method.GetName }}() *graphql.Field {
                 field := &graphql.Field{
                     Name: "{{ $method.FullMethod }}",
                     Description: "{{ $method.Description }}",
@@ -41,7 +41,7 @@ var handlerTemplate = template.Must(template.New("handler").
                 return field
             }
 
-            func (r *{{ $svc.GetName }}Resolver) resolve{{ $method.GetName }}(p graphql.ResolveParams) (interface{}, error) {
+            func (r *{{ $svc.PrivateServiceName }}Resolver) resolve{{ $method.GetName }}(p graphql.ResolveParams) (interface{}, error) {
                 in := &{{ $method.Request.GetGoTypeName }}{}
                 {{ range $field := $method.Request.Fields -}}
                     {{ $field.Variable }}, ok := p.Args["{{ $field.GetJsonName }}"].({{ $field.GoType }})

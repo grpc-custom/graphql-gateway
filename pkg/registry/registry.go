@@ -190,6 +190,11 @@ func (r *Registry) newMethod(svc *Service, md *descriptor.MethodDescriptorProto)
 			}
 		}
 	}
+	if ext, err := proto.GetExtension(md.Options, options.E_Mixin); err == nil {
+		if opts, ok := ext.(*options.Mixin); ok {
+			glog.Info(opts)
+		}
+	}
 
 	return m, nil
 }

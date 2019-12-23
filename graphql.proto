@@ -8,10 +8,12 @@ import "google/protobuf/descriptor.proto";
 
 extend google.protobuf.MethodOptions {
   Schema schema = 88916;
+  Mixin  mixin  = 88917;
 }
 
 extend google.protobuf.FieldOptions {
-  Field field = 88916;
+  Field    field    = 88916;
+  External external = 88917;
 }
 
 extend google.protobuf.MessageOptions {
@@ -32,6 +34,14 @@ message Schema {
   CacheControl cache_control = 5;
 }
 
+message Mixin {
+  oneof type {
+    string extend = 1;
+    string entity = 2;
+  }
+  string key = 3;
+}
+
 message Field {
   bool   nullable    = 1;
   string description = 2;
@@ -42,7 +52,12 @@ message Field {
   bool inline = 5;
 }
 
+message External {
+  string typename     = 1;
+  repeated string key = 2;
+}
+
 message Object {
-  string name        = 1;
+  string typename    = 1;
   string description = 2;
 }

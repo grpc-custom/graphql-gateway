@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package account;
+
+import "github.com/grpc-custom/graphql-gateway/graphql.proto";
+
+message User {
+  option (grpc_custom.graphql.object) = {
+    typename: "User"
+  };
+  string id       = 1;
+  string name     = 2;
+  string username = 3;
+}
+
+message GetMeRequest {}
+
+message GetMeResponse {
+  User user = 1 [(grpc_custom.graphql.field) = { inline: true }];
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message GetUserResponse {
+  User user = 1 [(grpc_custom.graphql.field) = { inline: true }];
+}
+
+service AccountService {
+  rpc GetMe(GetMeRequest) returns (GetMeResponse) {
+    option (grpc_custom.graphql.schema) = {
+      query: "me"
+    };
+  }
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {
+    option (grpc_custom.graphql.mixin) = {
+      entity: "User"
+      key: "id"
+    };
+  }
+}

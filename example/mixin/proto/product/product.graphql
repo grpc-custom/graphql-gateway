@@ -1,0 +1,12 @@
+scalar Int32
+
+extend type Query {
+    topProducts(first: Int32 = 5): [Product]
+}
+
+type Product @key(fields: "upc") {
+    upc: String!
+    name: String
+    price: Int32
+    weight: Int32
+}

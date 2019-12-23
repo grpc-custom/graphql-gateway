@@ -2,7 +2,9 @@ protofmt:
 	find . -name "*.proto" | xargs clang-format -i
 
 protoc:
-	protoc -I. \
+	protoc \
+		-I=${GOPATH}/src:. \
+		-I=${GOPATH}/src/github.com/googleapis/googleapis:. \
 		--go_out=plugins=grpc:${GOPATH}/src \
 		graphql.proto
 
@@ -59,5 +61,33 @@ gen-example-photo_share-schema: build-graphql-schema-debug
 		--go_out=plugins=grpc:. \
 		--graphql-schema-debug_out=logtostderr=true:. \
 		example/photo_share/proto/photo/*.proto
+
+gen-example-mixin: build-graphql-gateway-debug
+	protoc \
+		-I=${GOPATH}/src:. \
+		-I=${GOPATH}/src/github.com/googleapis/googleapis:. \
+		-I=${GOPATH}/src/github.com/grpc-custom:. \
+		--plugin=./protoc-gen-graphql-gateway-debug \
+		--go_out=plugins=grpc:. \
+		--graphql-gateway-debug_out=logtostderr=true:. \
+		example/mixin/proto/account/*.proto
+
+	protoc \
+		-I=${GOPATH}/src:. \
+		-I=${GOPATH}/src/github.com/googleapis/googleapis:. \
+		-I=${GOPATH}/src/github.com/grpc-custom:. \
+		--plugin=./protoc-gen-graphql-gateway-debug \
+		--go_out=plugins=grpc:. \
+		--graphql-gateway-debug_out=logtostderr=true:. \
+		example/mixin/proto/product/*.proto
+
+	protoc \
+		-I=${GOPATH}/src:. \
+		-I=${GOPATH}/src/github.com/googleapis/googleapis:. \
+		-I=${GOPATH}/src/github.com/grpc-custom:. \
+		--plugin=./protoc-gen-graphql-gateway-debug \
+		--go_out=plugins=grpc:. \
+		--graphql-gateway-debug_out=logtostderr=true:. \
+		example/mixin/proto/review/*.proto
 
 .PHONY: gazelle protofmt protoc

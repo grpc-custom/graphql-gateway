@@ -1,17 +1,18 @@
 package runtime
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/graphql-go/graphql"
 	"github.com/grpc-custom/graphql-gateway/runtime/codec"
 	jsoniter "github.com/json-iterator/go"
-	"golang.org/x/sync/singleflight"
 )
 
 const (
@@ -37,9 +38,11 @@ type graphQLRequest struct {
 type ServeMux struct {
 	pretty      bool
 	graphiQL    bool
+	mutex       sync.Mutex
 	schema      *graphql.Schema
 	middlewares []func(http.Handler) http.Handler
-	SharedGroup singleflight.Group
+	entities    map[string]graphql.Fields
+	objects     map[string]*graphql.Object
 }
 
 func (s *ServeMux) Use(middlewares ...func(http.Handler) http.Handler) {
@@ -160,6 +163,59 @@ func (s *ServeMux) AddSubscribe(name string, field *graphql.Field) {
 	s.schema.SubscriptionType().AddFieldConfig(name, field)
 }
 
+func (s *ServeMux) AddField(key, name string, field *graphql.Field) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	obj, ok := s.objects[key]
+	if !ok {
+		s.objects[key] = graphql.NewObject(graphql.ObjectConfig{
+			Name: key,
+			Fields: graphql.Fields{
+				name: field,
+			},
+		})
+		fmt.Println("==>", s.objects[key])
+		return
+	}
+	obj.AddFieldConfig(name, field)
+}
+
+func (s *ServeMux) AddObjectType(obj *graphql.Object) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	o, ok := s.objects[obj.Name()]
+	if !ok {
+		s.objects[obj.Name()] = obj
+		return
+	}
+	for name, v := range obj.Fields() {
+		o.AddFieldConfig(name, &graphql.Field{
+			Name:              v.Name,
+			Type:              v.Type,
+			Args:              s.toFieldArgs(v.Args),
+			Description:       v.Description,
+			Resolve:           v.Resolve,
+			DeprecationReason: v.DeprecationReason,
+		})
+	}
+}
+
+func (s *ServeMux) toFieldArgs(args []*graphql.Argument) graphql.FieldConfigArgument {
+	ret := make(graphql.FieldConfigArgument, len(args))
+	for _, arg := range args {
+		ret[arg.PrivateName] = &graphql.ArgumentConfig{
+			Type:         arg.Type,
+			Description:  arg.PrivateDescription,
+			DefaultValue: arg.DefaultValue,
+		}
+	}
+	return nil
+}
+
+func (s *ServeMux) GetObjectType(name string) *graphql.Object {
+	return s.objects[name]
+}
+
 func NewServeMux() (*ServeMux, error) {
 	dateField := dateResolver()
 	schema, err := graphql.NewSchema(graphql.SchemaConfig{
@@ -188,7 +244,11 @@ func NewServeMux() (*ServeMux, error) {
 	}
 	serveMux := &ServeMux{
 		graphiQL: false,
+		pretty:   false,
 		schema:   &schema,
+		mutex:    sync.Mutex{},
+		entities: map[string]graphql.Fields{},
+		objects:  map[string]*graphql.Object{},
 	}
 	return serveMux, nil
 }

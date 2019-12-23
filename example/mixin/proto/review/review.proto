@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package review;
+
+import "github.com/grpc-custom/graphql-gateway/graphql.proto";
+
+message Review {
+  option (grpc_custom.graphql.object) = {
+    typename: "Review"
+  };
+  string id          = 1;
+  string body        = 2;
+  string author_id   = 3 [(grpc_custom.graphql.external) = { typename: "User" key: "id" }];
+  string product_upc = 4 [(grpc_custom.graphql.external) = { typename: "Product" key: "upc" }];
+}
+
+message GetReviewRequest {
+  string id = 1;
+}
+
+message GetReviewResponse {
+  Review review = 1 [(grpc_custom.graphql.field) = { inline: true }];
+}
+
+message ListUserReviewsRequest {
+  string id    = 1;
+  int32  first = 2 [(grpc_custom.graphql.field) = { default_number: 5 }];
+}
+
+message ListUserReviewsResponse {
+  repeated Review reviews = 1;
+}
+
+message ListProductReviewsRequest {
+  string upc = 1;
+}
+
+message ListProductReviewsResponse {
+  repeated Review reviews = 1;
+}
+
+service ReviewService {
+  rpc GetReview(GetReviewRequest) returns (GetReviewResponse) {
+    option (grpc_custom.graphql.mixin) = {
+      entity: "Review"
+      key: "id"
+    };
+  }
+  rpc ListUserReviews(ListUserReviewsRequest) returns (ListUserReviewsResponse) {
+    option (grpc_custom.graphql.mixin) = {
+      extend: "User"
+      key: "id"
+    };
+  }
+  rpc ListProductReviews(ListProductReviewsRequest) returns (ListProductReviewsResponse) {
+    option (grpc_custom.graphql.mixin) = {
+      extend: "Product"
+      key: "upc"
+    };
+  }
+}

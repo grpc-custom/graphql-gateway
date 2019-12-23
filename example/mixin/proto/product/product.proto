@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package product;
+
+import "github.com/grpc-custom/graphql-gateway/graphql.proto";
+
+message Product {
+  option (grpc_custom.graphql.object) = {
+    typename: "Product"
+  };
+  string upc    = 1;
+  string name   = 2;
+  int32  price  = 3;
+  int32  weight = 4;
+}
+
+message TopProductsRequest {
+  int32 first = 1;
+}
+
+message TopProductsResponse {
+  repeated Product products = 1;
+}
+
+message GetProductRequest {
+  string upc = 1;
+}
+
+message GetProductResponse {
+  Product product = 1 [(grpc_custom.graphql.field) = { inline: true }];
+}
+
+service ProductService {
+  rpc TopProducts(TopProductsRequest) returns (TopProductsResponse) {
+    option (grpc_custom.graphql.schema) = {
+      query: "topProducts"
+    };
+  }
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse) {
+    option (grpc_custom.graphql.mixin) = {
+      entity: "Product"
+      key: "upc"
+    };
+  }
+}

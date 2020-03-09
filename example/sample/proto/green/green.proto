@@ -27,8 +27,8 @@ message ListRequest {
 }
 
 message ListResponse {
-  string   next_token   = 1;
-  repeated Green greens = 2;
+  string         next_token = 1;
+  repeated Green greens     = 2;
 }
 
 message GetRequest {

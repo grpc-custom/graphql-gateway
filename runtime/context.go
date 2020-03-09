@@ -14,8 +14,10 @@ import (
 )
 
 const (
-	MetadataPrefix      = "graphqlgateway-"
+	MetadataPrefix      = "gqlgateway-"
 	metadataGRPCTimeout = "Grpc-Timeout"
+	xForwardedFor       = "X-Forwarded-For"
+	xForwardedHost      = "X-Forwarded-Host"
 )
 
 type (

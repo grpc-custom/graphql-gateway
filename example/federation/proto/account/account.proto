@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package account;
+
+import "github.com/grpc-custom/graphql-gateway/graphql.proto";
+
+message User {
+  option (grpc_custom.graphql.object) = {
+    typename: "User"
+    key: "id"
+  };
+  string id       = 1;
+  string name     = 2;
+  string username = 3;
+}
+
+message GetMeRequest {}
+
+message GetMeResponse {
+  User user = 1 [(grpc_custom.graphql.field) = { inline: true }];
+}
+
+message MultiGetUsersRequest {
+  repeated string ids = 1 [(grpc_custom.graphql.field) = { external: "author_id" }];
+}
+
+message MultiGetUsersResponse {
+  repeated User users = 1;
+}
+
+message GetUserRequest {
+  string id = 1 [(grpc_custom.graphql.field) = { external: "author_id" }];
+}
+
+message GetUserResponse {
+  User user = 1 [(grpc_custom.graphql.field) = { inline: true }];
+}
+
+service AccountService {
+  rpc GetMe(GetMeRequest) returns (GetMeResponse) {
+    option (grpc_custom.graphql.schema) = {
+      query: "me"
+    };
+  }
+  rpc MultiGetUsers(MultiGetUsersRequest) returns (MultiGetUsersResponse) {}
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {
+    option (grpc_custom.graphql.schema) = {
+      extend: "Review"
+      field: "author"
+    };
+  }
+}

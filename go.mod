@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/golang/protobuf v1.3.4
+	github.com/golang/protobuf v1.3.5
 	github.com/graphql-go/graphql v0.7.9
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/hashicorp/golang-lru v0.5.4
@@ -18,6 +18,6 @@ require (
 	golang.org/x/sys v0.0.0-20191115151921-52ab43148777 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	google.golang.org/genproto v0.0.0-20191115221424-83cc0476cb11
-	google.golang.org/grpc v1.27.1
+	google.golang.org/grpc v1.28.1
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )

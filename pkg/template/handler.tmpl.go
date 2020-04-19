@@ -8,6 +8,19 @@ import (
 var handlerTemplate = template.Must(template.New("handler").
 	Parse(`
 {{ range $svc := .Services }}
+
+    {{ range $method := $svc.Methods }}
+        {{ if $method.Extend -}}
+            type extend{{ $method.FieldName }} interface {
+            {{ range $field := $method.Request.Fields -}}
+                {{ if $field.IsExternal -}}
+                    {{ $field.GetterExternalName }}() {{ $field.GoType }}
+                {{ end -}}
+            {{ end -}}
+            }
+        {{ end -}}
+    {{ end }}
+
     type {{ $svc.PrivateServiceName }}Resolver struct {
         client {{ $svc.GetName }}Client
         group singleflight.Group
@@ -28,7 +41,11 @@ var handlerTemplate = template.Must(template.New("handler").
                 field := &graphql.Field{
                     Name: "{{ $method.FullMethod }}",
                     Description: "{{ $method.Description }}",
-                    Type: {{ $method.Response.GetSchemaTypeName }},
+                    {{ if $method.Response.Inline -}}
+                        Type: {{ $method.Response.GetInlineSchemaTypeName }},
+                    {{ else -}}
+                        Type: {{ $method.Response.GetSchemaTypeName }},
+                    {{ end -}}
                     Args: graphql.FieldConfigArgument{
                     {{ range $field := $method.Request.Fields -}}
                         "{{ $field.GetJsonName }}": &graphql.ArgumentConfig{
@@ -81,11 +98,69 @@ var handlerTemplate = template.Must(template.New("handler").
                         ctx, cancel = context.WithTimeout(ctx, timeout)
                         defer cancel()
                     }
-                    result, err := r.client.{{ $method.GetName }}(ctx, in)
+                    out, err := r.client.{{ $method.GetName }}(ctx, in)
                     if err != nil {
                         return nil, errors.ToGraphQLError(err)
                     }
-                    return result, nil
+                    {{ if $method.Response.Inline -}}
+                        return out.{{ $method.Response.InlineFieldName }}, nil
+                    {{ else -}}
+                        return out, nil
+                    {{ end -}}
+                {{ end -}}
+            }
+
+        {{ end -}}
+
+        {{ if $method.Extend -}}
+            func (r *{{ $svc.PrivateServiceName }}Resolver) extend{{ $method.FieldName }}() *graphql.Field {
+                return &graphql.Field{
+                    {{ if $method.Response.Inline -}}
+                        Type: {{ $method.Response.GetInlineSchemaTypeName }},
+                    {{ else -}}
+                        Type: {{ $method.Response.GetSchemaTypeName }},
+                    {{ end -}}
+                    Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+                        ctx := runtime.Context(p.Context)
+                        src, ok := p.Source.(extend{{ $method.FieldName }})
+                        if !ok {
+                            return nil, errors.ErrWrongType
+                        }
+                        args := p.Args
+                        {{ range $field := $method.Request.Fields -}}
+                            {{ if $field.IsExternal -}}
+                                args["{{ $field.GetJsonName }}"] = src.{{ $field.GetterExternalName }}()
+                            {{ end -}}
+                        {{ end -}}
+                        return r.resolve{{ $method.GetName }}(ctx, args)
+                    },
+                }
+            }
+
+            func (r *{{ $svc.PrivateServiceName }}Resolver) resolve{{ $method.GetName }}(ctx context.Context, args map[string]interface{}) (interface{}, error) {
+                in := new({{ $method.Request.GetGoTypeName }})
+                {{ range $field := $method.Request.Fields -}}
+                    {{ $field.Variable }}, ok := args["{{ $field.GetJsonName }}"].({{ $field.GoType }})
+                    if !ok {
+                        {{ if $field.GetJsonName -}}
+                            {{ $field.Variable }} = {{ $field.GoDefaultValue }}
+                        {{ else -}}
+                            return nil, errors.ErrInvalidArguments
+                        {{ end -}}
+                    }
+                    in.{{ $field.FieldName }} = {{ $field.Variable }}
+                {{ end -}}
+                out, err := r.client.{{ $method.GetName }}(ctx, in)
+                {{ if $method.Response.Inline -}}
+                    if err != nil {
+                        return nil, errors.ToGraphQLError(err)
+                    }
+                    return out.{{ $method.Response.InlineFieldName }}, nil
+                {{ else -}}
+                    if err != nil {
+                        return nil, errors.ToGraphQLError(err)
+                    }
+                    return out, nil
                 {{ end -}}
             }
 
@@ -127,12 +202,16 @@ func Register{{ $svc.GetName }}{{ $.RegisterFuncSuffix }}HandlerClient(mux *runt
     {{ if $method.HasGraphQLMethod -}}
         // gRPC {{ $method.FullMethod }}
         {{ if $method.Query -}}
-            mux.AddQuery("{{ $method.FieldName }}", svc.Field{{ $method.GetName }}())
+            mux.AddQuery("{{ $method.Name }}", svc.Field{{ $method.GetName }}())
         {{ else if $method.Mutation -}}
-            mux.AddMutation("{{ $method.FieldName }}", svc.Field{{ $method.GetName }}())
+            mux.AddMutation("{{ $method.Name }}", svc.Field{{ $method.GetName }}())
         {{ else if $method.Subscribe -}}
-            mux.AddSubscribe("{{ $method.FieldName }}", svc.Field{{ $method.GetName }}())
+            mux.AddSubscribe("{{ $method.Name }}", svc.Field{{ $method.GetName }}())
         {{ end -}}
+    {{ end -}}
+    {{ if $method.Extend -}}
+        // extend {{ $method.Name }}.{{ $method.Field }}
+        mux.AddField("{{ $method.Name }}", "{{ $method.Field }}", svc.extend{{ $method.FieldName }}())
     {{ end -}}
 {{ end -}}
     return nil

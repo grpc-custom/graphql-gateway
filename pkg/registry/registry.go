@@ -81,6 +81,13 @@ func (r *Registry) applyMsg(file *File, outerPath []string, msgs []*descriptor.D
 			DescriptorProto: msg,
 			Index:           i,
 		}
+		if ext, err := proto.GetExtension(msg.Options, options.E_Object); err == nil {
+			if opts, ok := ext.(*options.Object); ok {
+				m.Object = new(Object)
+				m.Object.Typename = opts.Typename
+				m.Object.Keys = opts.Key
+			}
+		}
 		for _, fd := range msg.GetField() {
 			field := &Field{
 				Message:              m,
@@ -90,6 +97,19 @@ func (r *Registry) applyMsg(file *File, outerPath []string, msgs []*descriptor.D
 				if opts, ok := ext.(*options.Field); ok {
 					field.Description = opts.Description
 					field.Nullable = &opts.Nullable
+					// default value
+					switch v := opts.Default.(type) {
+					case *options.Field_DefaultBool:
+						field.DefaultValue = v.DefaultBool
+					case *options.Field_DefaultNumber:
+						field.DefaultValue = int(v.DefaultNumber)
+					case *options.Field_DefaultString:
+						field.DefaultValue = v.DefaultString
+					}
+					field.Inline = opts.Inline
+					field.Name = opts.Name
+					field.Exclude = opts.Exclude
+					field.External = opts.External
 				}
 			}
 			m.Fields = append(m.Fields, field)
@@ -170,19 +190,26 @@ func (r *Registry) newMethod(svc *Service, md *descriptor.MethodDescriptorProto)
 			switch t := opts.Type.(type) {
 			case *options.Schema_Query:
 				m.Query = true
-				m.FieldName = t.Query
+				m.Name = t.Query
 			case *options.Schema_Mutation:
 				m.Mutation = true
-				m.FieldName = t.Mutation
+				m.Name = t.Mutation
 			case *options.Schema_Subscribe:
 				m.Subscribe = true
-				m.FieldName = t.Subscribe
+				m.Name = t.Subscribe
+			case *options.Schema_Extend:
+				m.Extend = true
+				m.Name = t.Extend
+				m.Field = opts.Field
 			}
 			if (m.Mutation || m.Subscribe) && opts.CacheControl != nil {
-				return nil, fmt.Errorf("invalid cache control option.\n\r %s: \"%s\"", m.GraphQLMethod(), m.FieldName)
+				return nil, fmt.Errorf("invalid cache control option.\n\r %s: \"%s\"", m.GraphQLMethod(), m.Name)
 			}
 			if opts.CacheControl != nil {
-				m.CacheControl = &CacheControl{}
+				m.CacheControl = new(CacheControl)
+				if opts.CacheControl.MaxAge != "" {
+					opts.CacheControl.MaxAge = "0"
+				}
 				m.CacheControl.MaxAge, err = time.ParseDuration(opts.CacheControl.MaxAge)
 				if err != nil {
 					return nil, err
@@ -190,7 +217,6 @@ func (r *Registry) newMethod(svc *Service, md *descriptor.MethodDescriptorProto)
 			}
 		}
 	}
-
 	return m, nil
 }
 

@@ -2,24 +2,34 @@
 package template
 
 import (
-    "text/template"
+	"text/template"
 )
 
 var schemasTemplate = template.Must(template.New("schemas").
-Parse(`
+	Parse(`
 var (
 {{ range $msg := .Messages }}
     {{ $msg.GetSchemaTypeName }} = graphql.NewObject(graphql.ObjectConfig{
-        Name: "{{ $msg.FieldName }}",
+        Name: "{{ $msg.Name }}",
         Fields: graphql.Fields{
         {{ range $field := $msg.Fields -}}
+            {{ if eq $field.Exclude false -}}
             "{{ $field.GetJsonName }}": &graphql.Field{
                 Type: {{ $field.ScalarType }},
             },
+            {{ end -}}
         {{ end }}
         },
     })
 {{ end }}
 )
+
+func RegisterGQLObjectTypes(mux *runtime.ServeMux) {
+{{- range $msg := .Messages }}
+    {{- if $msg.IsObject }}
+        mux.AddObjectType({{ $msg.GetSchemaTypeName }})
+    {{- end }}
+{{- end }}
+}
 
 `))

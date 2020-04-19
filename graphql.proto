@@ -27,9 +27,11 @@ message Schema {
     string query     = 1;
     string mutation  = 2;
     string subscribe = 3;
+    string extend    = 4;
   }
-  string       description   = 4;
-  CacheControl cache_control = 5;
+  string       description   = 6;
+  CacheControl cache_control = 7;
+  string       field         = 8;
 }
 
 message Field {
@@ -37,12 +39,17 @@ message Field {
   string description = 2;
   oneof default {
     string default_string = 3;
-    int64  default_number = 4;
+    int32  default_number = 4;
+    bool   default_bool   = 5;
   }
-  bool inline = 5;
+  bool inline     = 6;
+  string name     = 7;
+  bool   exclude  = 8;
+  string external = 9;
 }
 
 message Object {
-  string name        = 1;
-  string description = 2;
+  string typename             = 1;
+  repeated string key         = 2;
+  string          description = 3;
 }

@@ -11,6 +11,7 @@ import (
 
 var (
 	ErrInvalidArguments = errors.New("runtime: invalid arguments")
+	ErrWrongType        = errors.New("runtime: wrong type for Get method")
 )
 
 var (

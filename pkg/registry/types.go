@@ -2,6 +2,7 @@ package registry
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -41,6 +42,13 @@ type Message struct {
 	Fields []*Field
 	Index  int
 	Type   string
+	// GraphQL plugin options
+	Object *Object
+}
+
+type Object struct {
+	Typename string
+	Keys     []string
 }
 
 func (m *Message) FieldName() string {
@@ -75,6 +83,37 @@ func (m *Message) GetGoTypeName() string {
 	default:
 		return m.GetName()
 	}
+}
+
+func (m *Message) IsObject() bool {
+	return m.Object != nil
+}
+
+func (m *Message) Inline() bool {
+	for _, field := range m.Fields {
+		if field.Inline {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *Message) GetInlineSchemaTypeName() string {
+	for _, field := range m.Fields {
+		if field.Inline {
+			return field.ScalarType()
+		}
+	}
+	return ""
+}
+
+func (m *Message) InlineFieldName() string {
+	for _, field := range m.Fields {
+		if field.Inline {
+			return field.FieldName()
+		}
+	}
+	return ""
 }
 
 type Enum struct {
@@ -113,11 +152,18 @@ type Method struct {
 	Response *Message
 	// GraphQL plugin options
 	Description  string
-	FieldName    string
+	Name         string
 	Query        bool
 	Mutation     bool
 	Subscribe    bool
+	Extend       bool
+	Reference    bool
 	CacheControl *CacheControl
+	Field        string
+}
+
+type CacheControl struct {
+	MaxAge time.Duration
 }
 
 func (m *Method) FullMethod() string {
@@ -147,8 +193,12 @@ func (m *Method) Variable() string {
 	return name
 }
 
-type CacheControl struct {
-	MaxAge time.Duration
+func (m *Method) FieldName() string {
+	name := generator.CamelCase(m.Name)
+	name = strings.ToUpper(name[0:1]) + name[1:]
+	field := generator.CamelCase(m.Field)
+	field = strings.ToUpper(field[0:1]) + field[1:]
+	return name + field
 }
 
 type Field struct {
@@ -157,9 +207,14 @@ type Field struct {
 	FieldMessage *Message
 	Enum         *Enum
 	// GraphQL plugin options
-	Description string
-	Nullable    *bool
-	Dependence  *Message
+	Dependence   *Message
+	Description  string
+	Nullable     *bool
+	DefaultValue interface{}
+	Inline       bool
+	Name         string
+	Exclude      bool
+	External     string
 }
 
 func (f *Field) IsMessageType() bool {
@@ -176,6 +231,25 @@ func (f *Field) isRepeated() bool {
 
 func (f *Field) IsNullable() bool {
 	return f.Nullable == nil || *f.Nullable
+}
+
+func (f *Field) IsDefaultValueBool() bool {
+	_, ok := f.DefaultValue.(bool)
+	return ok
+}
+
+func (f *Field) IsDefaultValueNumber() bool {
+	_, ok := f.DefaultValue.(int)
+	return ok
+}
+
+func (f *Field) IsDefaultValueString() bool {
+	_, ok := f.DefaultValue.(string)
+	return ok
+}
+
+func (f *Field) IsExternal() bool {
+	return f.External != ""
 }
 
 func (f *Field) FieldName() string {
@@ -282,11 +356,23 @@ func (f *Field) GoDefaultValue() string {
 		descriptor.FieldDescriptorProto_TYPE_UINT32,
 		descriptor.FieldDescriptorProto_TYPE_FIXED32,
 		descriptor.FieldDescriptorProto_TYPE_SFIXED32:
-		return "0"
+		value, ok := f.DefaultValue.(int)
+		if !ok {
+			return "0"
+		}
+		return strconv.Itoa(value)
 	case descriptor.FieldDescriptorProto_TYPE_BOOL:
-		return "false"
+		value, ok := f.DefaultValue.(bool)
+		if !ok {
+			return "false"
+		}
+		return strconv.FormatBool(value)
 	case descriptor.FieldDescriptorProto_TYPE_STRING:
-		return "\"\""
+		value, ok := f.DefaultValue.(string)
+		if !ok {
+			return `""`
+		}
+		return value
 	case descriptor.FieldDescriptorProto_TYPE_GROUP:
 		// unknown fields
 	case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
@@ -374,6 +460,12 @@ func (f *Field) ScalarType() string {
 		scalar = fmt.Sprintf("graphql.NewList(%s)", scalar)
 	}
 	return scalar
+}
+
+func (f *Field) GetterExternalName() string {
+	ext := generator.CamelCase(f.External)
+	ext = strings.ToUpper(ext[0:1]) + ext[1:]
+	return "Get" + ext
 }
 
 var isGoProtoMethod = map[string]bool{

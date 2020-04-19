@@ -60,4 +60,32 @@ gen-example-photo_share-schema: build-graphql-schema-debug
 		--graphql-schema-debug_out=logtostderr=true:. \
 		example/photo_share/proto/photo/*.proto
 
+gen-example-federation: build-graphql-gateway-debug
+	protoc \
+		-I=${GOPATH}/src:. \
+		-I=${GOPATH}/src/github.com/googleapis/googleapis:. \
+		-I=${GOPATH}/src/github.com/grpc-custom:. \
+		--plugin=./protoc-gen-graphql-gateway-debug \
+		--go_out=plugins=grpc:. \
+		--graphql-gateway-debug_out=logtostderr=true:. \
+		example/federation/proto/account/*.proto
+
+	protoc \
+		-I=${GOPATH}/src:. \
+		-I=${GOPATH}/src/github.com/googleapis/googleapis:. \
+		-I=${GOPATH}/src/github.com/grpc-custom:. \
+		--plugin=./protoc-gen-graphql-gateway-debug \
+		--go_out=plugins=grpc:. \
+		--graphql-gateway-debug_out=logtostderr=true:. \
+		example/federation/proto/product/*.proto
+
+	protoc \
+		-I=${GOPATH}/src:. \
+		-I=${GOPATH}/src/github.com/googleapis/googleapis:. \
+		-I=${GOPATH}/src/github.com/grpc-custom:. \
+		--plugin=./protoc-gen-graphql-gateway-debug \
+		--go_out=plugins=grpc:. \
+		--graphql-gateway-debug_out=logtostderr=true:. \
+		example/federation/proto/review/*.proto
+
 .PHONY: gazelle protofmt protoc

@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package review;
+
+import "github.com/grpc-custom/graphql-gateway/graphql.proto";
+
+message Review {
+  option (grpc_custom.graphql.object) = {
+    typename: "Review"
+    key: "id"
+  };
+  string id         = 1;
+  string body       = 2;
+  string author_id  = 3 [(grpc_custom.graphql.field) = { exclude: true }];
+  string product_id = 4 [(grpc_custom.graphql.field) = { exclude: true }];
+}
+
+message ListUserReviewsRequest {
+  string user_id = 1 [(grpc_custom.graphql.field) = { external: "id" }];
+  int32  first   = 2 [(grpc_custom.graphql.field) = { default_number: 5 }];
+}
+
+message ListUserReviewsResponse {
+  repeated Review reviews = 1 [(grpc_custom.graphql.field) = { inline: true }];
+}
+
+message ListProductReviewsRequest {
+  string product_id = 1 [(grpc_custom.graphql.field) = { external: "upc" }];
+}
+
+message ListProductReviewsResponse {
+  repeated Review reviews = 1 [(grpc_custom.graphql.field) = { inline: true }];
+}
+
+service ReviewService {
+  rpc ListUserReviews(ListUserReviewsRequest) returns (ListUserReviewsResponse) {
+    option (grpc_custom.graphql.schema) = {
+      extend: "User"
+      field: "reviews"
+    };
+  }
+  rpc ListProductReviews(ListProductReviewsRequest) returns (ListProductReviewsResponse) {
+    option (grpc_custom.graphql.schema) = {
+      extend: "Product"
+      field: "reviews"
+    };
+  }
+}

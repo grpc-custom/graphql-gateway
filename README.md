@@ -99,14 +99,16 @@ go get -u github.com/grpc-custom/graphql-gateway/cmd/protoc-gen-graphql-gateway
 
 ## TODO
 
+- Apollo Persisted Queries
+- complexity
+- data loader
 - custom error handling
+- subscribe
+  - websocket
 - enum (string)
 - message pack
 - cache control
   - redis
   - memcache
 - graphql schema
-- subscribe
-  - websocket
-- data loader
 - open trace

@@ -16,3 +16,5 @@
 bazel-*
 
 /protoc-gen-graphql-gateway-debug
+
+_output/

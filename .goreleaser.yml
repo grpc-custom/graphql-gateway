@@ -1,0 +1,24 @@
+env:
+  - GO111MODULE=on
+before:
+  hooks:
+    - go mod download
+    - go generate ./...
+builds:
+  - main: ./cmd/protoc-gen-graphql-gateway/main.go
+    id: protoc-gen-graphql-gateway
+    binary: protoc-gen-graphql-gateway
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+archives:
+  - name_template: "{{ .Binary }}-{{ .Tag }}-{{ .Os }}-{{ .Arch }}"
+    format: binary
+    replacements:
+      amd64: x86_64
+dist: _output

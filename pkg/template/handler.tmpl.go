@@ -77,7 +77,11 @@ var handlerTemplate = template.Must(template.New("handler").
                     key := cache.GenerateKey("{{ $method.FullMethod }}", in)
                     value, ok := r.c.Get(key)
                     if ok {
+                        {{ if $method.Response.Inline -}}
+                        return value.{{ $method.Response.InlineFieldName }}, nil
+                        {{ else -}}
                         return value, nil
+                        {{ end -}}
                     }
                     result, err, _ := r.group.Do(key, func() (interface{}, error) {
                         if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
@@ -91,7 +95,11 @@ var handlerTemplate = template.Must(template.New("handler").
                         return nil, errors.ToGraphQLError(err)
                     }
                     r.c.Set(key, result, {{ $method.CacheControl.MaxAge.Seconds }}*time.Second)
+                    {{ if $method.Response.Inline -}}
+                    return result.{{ $method.Response.InlineFieldName }}, nil
+                    {{ else -}}
                     return result, nil
+                    {{ end -}}
                 {{ else -}}
                     if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
                         var cancel context.CancelFunc

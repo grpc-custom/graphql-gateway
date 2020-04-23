@@ -96,6 +96,9 @@ var (
 	})
 )
 
+func RegisterGQLObjectTypes(mux *runtime.ServeMux) {
+}
+
 type userServerResolver struct {
 	client UserServerClient
 	group  singleflight.Group
@@ -129,11 +132,11 @@ func (r *userServerResolver) resolveMe(p graphql.ResolveParams) (interface{}, er
 		ctx, cancel = context.WithTimeout(ctx, timeout)
 		defer cancel()
 	}
-	result, err := r.client.Me(ctx, in)
+	out, err := r.client.Me(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)
 	}
-	return result, nil
+	return out, nil
 }
 
 func (r *userServerResolver) FieldTotalUsers() *graphql.Field {
@@ -155,11 +158,11 @@ func (r *userServerResolver) resolveTotalUsers(p graphql.ResolveParams) (interfa
 		ctx, cancel = context.WithTimeout(ctx, timeout)
 		defer cancel()
 	}
-	result, err := r.client.TotalUsers(ctx, in)
+	out, err := r.client.TotalUsers(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)
 	}
-	return result, nil
+	return out, nil
 }
 
 func (r *userServerResolver) FieldAllUsers() *graphql.Field {
@@ -181,11 +184,11 @@ func (r *userServerResolver) resolveAllUsers(p graphql.ResolveParams) (interface
 		ctx, cancel = context.WithTimeout(ctx, timeout)
 		defer cancel()
 	}
-	result, err := r.client.AllUsers(ctx, in)
+	out, err := r.client.AllUsers(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)
 	}
-	return result, nil
+	return out, nil
 }
 
 func (r *userServerResolver) FieldUser() *graphql.Field {
@@ -216,11 +219,11 @@ func (r *userServerResolver) resolveUser(p graphql.ResolveParams) (interface{}, 
 		ctx, cancel = context.WithTimeout(ctx, timeout)
 		defer cancel()
 	}
-	result, err := r.client.User(ctx, in)
+	out, err := r.client.User(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)
 	}
-	return result, nil
+	return out, nil
 }
 
 func (r *userServerResolver) FieldGithubAuth() *graphql.Field {
@@ -251,11 +254,11 @@ func (r *userServerResolver) resolveGithubAuth(p graphql.ResolveParams) (interfa
 		ctx, cancel = context.WithTimeout(ctx, timeout)
 		defer cancel()
 	}
-	result, err := r.client.GithubAuth(ctx, in)
+	out, err := r.client.GithubAuth(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)
 	}
-	return result, nil
+	return out, nil
 }
 
 func RegisterUserServerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {

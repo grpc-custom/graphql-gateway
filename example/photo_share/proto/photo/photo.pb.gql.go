@@ -112,6 +112,9 @@ var (
 	})
 )
 
+func RegisterGQLObjectTypes(mux *runtime.ServeMux) {
+}
+
 type photoServiceResolver struct {
 	client PhotoServiceClient
 	group  singleflight.Group
@@ -284,11 +287,11 @@ func (r *photoServiceResolver) resolvePostPhoto(p graphql.ResolveParams) (interf
 		ctx, cancel = context.WithTimeout(ctx, timeout)
 		defer cancel()
 	}
-	result, err := r.client.PostPhoto(ctx, in)
+	out, err := r.client.PostPhoto(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)
 	}
-	return result, nil
+	return out, nil
 }
 
 func (r *photoServiceResolver) FieldTagPhoto() *graphql.Field {
@@ -327,11 +330,11 @@ func (r *photoServiceResolver) resolveTagPhoto(p graphql.ResolveParams) (interfa
 		ctx, cancel = context.WithTimeout(ctx, timeout)
 		defer cancel()
 	}
-	result, err := r.client.TagPhoto(ctx, in)
+	out, err := r.client.TagPhoto(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)
 	}
-	return result, nil
+	return out, nil
 }
 
 func RegisterPhotoServiceFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {

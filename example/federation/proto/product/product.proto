@@ -32,6 +32,9 @@ service ProductService {
   rpc TopProducts(TopProductsRequest) returns (TopProductsResponse) {
     option (grpc_custom.graphql.schema) = {
       query: "topProducts"
+      cache_control {
+        max_age: "60s"
+      }
     };
   }
   rpc GetProduct(GetProductRequest) returns (GetProductResponse) {

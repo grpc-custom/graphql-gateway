@@ -207,7 +207,7 @@ func (r *Registry) newMethod(svc *Service, md *descriptor.MethodDescriptorProto)
 			}
 			if opts.CacheControl != nil {
 				m.CacheControl = new(CacheControl)
-				if opts.CacheControl.MaxAge != "" {
+				if opts.CacheControl.MaxAge == "" {
 					opts.CacheControl.MaxAge = "0"
 				}
 				m.CacheControl.MaxAge, err = time.ParseDuration(opts.CacheControl.MaxAge)

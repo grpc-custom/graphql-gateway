@@ -10,6 +10,7 @@ package product
 
 import (
 	"context"
+	"time"
 
 	"github.com/graphql-go/graphql"
 	"github.com/grpc-custom/graphql-gateway/runtime"
@@ -106,16 +107,25 @@ func (r *productServiceResolver) FieldTopProducts() *graphql.Field {
 func (r *productServiceResolver) resolveTopProducts(p graphql.ResolveParams) (interface{}, error) {
 	in := &TopProductsRequest{}
 	ctx := runtime.Context(p.Context)
-	if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, timeout)
-		defer cancel()
+	// cache control max age: 60 second
+	key := cache.GenerateKey("/product.ProductService/TopProducts", in)
+	value, ok := r.c.Get(key)
+	if ok {
+		return value.Products, nil
 	}
-	out, err := r.client.TopProducts(ctx, in)
+	result, err, _ := r.group.Do(key, func() (interface{}, error) {
+		if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, timeout)
+			defer cancel()
+		}
+		return r.client.TopProducts(ctx, in)
+	})
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)
 	}
-	return out.Products, nil
+	r.c.Set(key, result, 60*time.Second)
+	return result.Products, nil
 }
 
 func (r *productServiceResolver) extendReviewProduct() *graphql.Field {

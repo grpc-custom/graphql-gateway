@@ -1,11 +1,11 @@
 package runtime
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/graphql-go/graphql"
 	"github.com/grpc-custom/graphql-gateway/runtime/scalar"
-	"github.com/k0kubun/pp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -53,5 +53,5 @@ func TestServeMux_AddField(t *testing.T) {
 	}
 	serve.AddObjectType(userType)
 	serve.AddField("User", "reviews", field)
-	pp.Println(serve.objects)
+	fmt.Println(serve.objects)
 }

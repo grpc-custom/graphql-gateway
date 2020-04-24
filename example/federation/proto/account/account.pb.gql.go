@@ -159,6 +159,11 @@ func (r *accountServiceResolver) resolveGetUser(ctx context.Context, args map[st
 		valueId = ""
 	}
 	in.Id = valueId
+	if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
 	out, err := r.client.GetUser(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)

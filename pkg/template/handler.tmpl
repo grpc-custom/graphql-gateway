@@ -69,9 +69,10 @@
                     value, ok := r.c.Get(key)
                     if ok {
                         {{ if $method.Response.Inline -}}
-                        return value.{{ $method.Response.InlineFieldName }}, nil
+                            ret := value.(*{{ $method.Response.Name }})
+                            return ret.{{ $method.Response.InlineFieldName }}, nil
                         {{ else -}}
-                        return value, nil
+                            return value, nil
                         {{ end -}}
                     }
                     result, err, _ := r.group.Do(key, func() (interface{}, error) {
@@ -87,9 +88,10 @@
                     }
                     r.c.Set(key, result, {{ $method.CacheControl.MaxAge.Seconds }}*time.Second)
                     {{ if $method.Response.Inline -}}
-                    return result.{{ $method.Response.InlineFieldName }}, nil
+                        ret := result.(*{{ $method.Response.Name }})
+                        return ret.{{ $method.Response.InlineFieldName }}, nil
                     {{ else -}}
-                    return result, nil
+                        return result, nil
                     {{ end -}}
                 {{ else -}}
                     if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
@@ -149,17 +151,51 @@
                     }
                     in.{{ $field.FieldName }} = {{ $field.Variable }}
                 {{ end -}}
-                out, err := r.client.{{ $method.GetName }}(ctx, in)
-                {{ if $method.Response.Inline -}}
+                {{ if $method.CacheControl -}}
+                    // cache control max age: {{ $method.CacheControl.MaxAge.Seconds }} second
+                    key := cache.GenerateKey("{{ $method.FullMethod }}", in)
+                    value, ok := r.c.Get(key)
+                    if ok {
+                        {{ if $method.Response.Inline -}}
+                            ret := value.(*{{ $method.Response.Name }})
+                            return ret.{{ $method.Response.InlineFieldName }}, nil
+                        {{ else -}}
+                            return value, nil
+                        {{ end -}}
+                    }
+                    result, err, _ := r.group.Do(key, func() (interface{}, error) {
+                        if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+                            var cancel context.CancelFunc
+                            ctx, cancel = context.WithTimeout(ctx, timeout)
+                            defer cancel()
+                        }
+                        return r.client.{{ $method.GetName }}(ctx, in)
+                    })
                     if err != nil {
                         return nil, errors.ToGraphQLError(err)
                     }
-                    return out.{{ $method.Response.InlineFieldName }}, nil
+                    r.c.Set(key, result, {{ $method.CacheControl.MaxAge.Seconds }}*time.Second)
+                    {{ if $method.Response.Inline -}}
+                        ret := result.(*{{ $method.Response.Name }})
+                        return ret.{{ $method.Response.InlineFieldName }}, nil
+                    {{ else -}}
+                        return result, nil
+                    {{ end -}}
                 {{ else -}}
+                    if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+                        var cancel context.CancelFunc
+                        ctx, cancel = context.WithTimeout(ctx, timeout)
+                        defer cancel()
+                    }
+                    out, err := r.client.{{ $method.GetName }}(ctx, in)
                     if err != nil {
                         return nil, errors.ToGraphQLError(err)
                     }
-                    return out, nil
+                    {{ if $method.Response.Inline -}}
+                        return out.{{ $method.Response.InlineFieldName }}, nil
+                    {{ else -}}
+                        return out, nil
+                    {{ end -}}
                 {{ end -}}
             }
 

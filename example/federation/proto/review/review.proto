@@ -37,6 +37,9 @@ service ReviewService {
     option (grpc_custom.graphql.schema) = {
       extend: "User"
       field: "reviews"
+      cache_control {
+        max_age: "30s"
+      }
     };
   }
   rpc ListProductReviews(ListProductReviewsRequest) returns (ListProductReviewsResponse) {

@@ -10,6 +10,7 @@ package review
 
 import (
 	"context"
+	"time"
 
 	"github.com/graphql-go/graphql"
 	"github.com/grpc-custom/graphql-gateway/runtime"
@@ -128,11 +129,27 @@ func (r *reviewServiceResolver) resolveListUserReviews(ctx context.Context, args
 		valueFirst = 5
 	}
 	in.First = valueFirst
-	out, err := r.client.ListUserReviews(ctx, in)
+	// cache control max age: 30 second
+	key := cache.GenerateKey("/review.ReviewService/ListUserReviews", in)
+	value, ok := r.c.Get(key)
+	if ok {
+		ret := value.(*ListUserReviewsResponse)
+		return ret.Reviews, nil
+	}
+	result, err, _ := r.group.Do(key, func() (interface{}, error) {
+		if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, timeout)
+			defer cancel()
+		}
+		return r.client.ListUserReviews(ctx, in)
+	})
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)
 	}
-	return out.Reviews, nil
+	r.c.Set(key, result, 30*time.Second)
+	ret := result.(*ListUserReviewsResponse)
+	return ret.Reviews, nil
 }
 
 func (r *reviewServiceResolver) extendProductReviews() *graphql.Field {
@@ -158,6 +175,11 @@ func (r *reviewServiceResolver) resolveListProductReviews(ctx context.Context, a
 		valueProductId = ""
 	}
 	in.ProductId = valueProductId
+	if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
 	out, err := r.client.ListProductReviews(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)

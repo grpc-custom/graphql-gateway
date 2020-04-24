@@ -111,7 +111,8 @@ func (r *productServiceResolver) resolveTopProducts(p graphql.ResolveParams) (in
 	key := cache.GenerateKey("/product.ProductService/TopProducts", in)
 	value, ok := r.c.Get(key)
 	if ok {
-		return value.Products, nil
+		ret := value.(*TopProductsResponse)
+		return ret.Products, nil
 	}
 	result, err, _ := r.group.Do(key, func() (interface{}, error) {
 		if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
@@ -125,7 +126,8 @@ func (r *productServiceResolver) resolveTopProducts(p graphql.ResolveParams) (in
 		return nil, errors.ToGraphQLError(err)
 	}
 	r.c.Set(key, result, 60*time.Second)
-	return result.Products, nil
+	ret := result.(*TopProductsResponse)
+	return ret.Products, nil
 }
 
 func (r *productServiceResolver) extendReviewProduct() *graphql.Field {
@@ -151,6 +153,11 @@ func (r *productServiceResolver) resolveGetProduct(ctx context.Context, args map
 		valueUpc = ""
 	}
 	in.Upc = valueUpc
+	if timeout := runtime.GrpcTimeout(ctx); timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
 	out, err := r.client.GetProduct(ctx, in)
 	if err != nil {
 		return nil, errors.ToGraphQLError(err)

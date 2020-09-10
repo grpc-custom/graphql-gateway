@@ -7,7 +7,7 @@ require (
 	github.com/golang/protobuf v1.4.2
 	github.com/graph-gophers/dataloader v5.0.0+incompatible
 	github.com/graphql-go/graphql v0.7.9
-	github.com/grpc-ecosystem/go-grpc-middleware v1.2.1
+	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/json-iterator/go v1.1.10
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
